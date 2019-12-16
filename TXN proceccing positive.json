@@ -1,0 +1,4253 @@
+{
+	"info": {
+		"_postman_id": "11da0395-5470-4fa0-a508-91d208eb58d8",
+		"name": "Spentlabs",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Authorization",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "c415574c-de20-4d53-bffd-85caf4286ec8",
+								"exec": [
+									"pm.test('status check', function () {",
+									"\tpm.response.to.have.status(200);",
+									"\tpm.expect(pm.response.responseTime).to.be.below(3000);",
+									"pm.test(\"Body have token\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"token\");});",
+									"var jsonData = JSON.parse(responseBody);",
+									"postman.setGlobalVariable(\"Token\", jsonData.token);",
+									"})"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"customerName\": \"{{Customer}}\",\n    \"apiKey\": \"{{Customer}}\",\n    \"apiSecret\": \"{{Customer}}\"\n\t\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{APIserver}}/api/v1/auth/token",
+							"host": [
+								"{{APIserver}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"token"
+							]
+						},
+						"description": "Authorization"
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "Usbutton txn processing test",
+			"item": [
+				{
+					"name": "offer search",
+					"item": [
+						{
+							"name": "Offer search",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "35450045-0dfa-4002-97ff-84f6f19b29b9",
+										"exec": [
+											"var jsonData = JSON.parse(responseBody);",
+											"let UserRandom = pm.globals.get(\"UserRandom\");\t",
+											"postman.setGlobalVariable(\"OfferLink\", jsonData[0].offers[0].trackingUrl+\"&user=\"+UserRandom);",
+											"postman.setGlobalVariable(\"OfferId\", jsonData[0].offers[0].offerId);",
+											"pm.test('status and response time check', function () {",
+											"\tpm.response.to.have.status(200);",
+											"\tpm.expect(pm.response.responseTime).to.be.below(3000);",
+											"\t",
+											"})"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"id": "be769177-18f8-44cd-b1e3-67eb78114164",
+										"exec": [
+											"postman.setGlobalVariable(\"UserRandom\", _.random(10000,1000000));"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": " {{Token}}",
+										"type": "text"
+									},
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"search\": \"{{UBmerchant}}\"\n }",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{APIserver}}/api/v1/offers",
+									"host": [
+										"{{APIserver}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"offers"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "click",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "4f13f226-8ebf-4dcd-95c5-5646548d20bc",
+										"exec": [
+											"pm.test('status check', function () {",
+											"\tpm.response.to.have.status(200);})"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{OfferLink}}",
+									"host": [
+										"{{OfferLink}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Read hash",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "2ddbc981-5463-4159-8a1a-f1d544cafba7",
+										"exec": [
+											"pm.test('Hash exist?', function () {",
+											"\tpm.response.to.have.status(200);",
+											"\tpm.expect(pm.response.responseTime).to.be.below(5000);",
+											"    pm.expect(pm.response.text()).to.include(\"hash\");",
+											"\tvar jsonData = JSON.parse(responseBody);",
+											"\tlet UserRandom = pm.globals.get(\"UserRandom\");",
+											"\tpm.globals.set(\"Hash\", jsonData[0].hash);",
+											"})",
+											"pm.test('Generate BASE64...', function () {",
+											"var Hash = pm.globals.get('Hash');",
+											"var OfferId = pm.globals.get('OfferId');",
+											"var UserRandom = pm.globals.get('UserRandom');",
+											"const moment = require('moment');",
+											"pm.globals.set(\"EpochTS\", moment().valueOf());",
+											"var TimeStamp = pm.globals.get('EpochTS');",
+											"var HashOfferETS = Hash+\"|\"+OfferId+\"|\"+TimeStamp;",
+											"var CryptoJS = require(\"crypto-js\");",
+											"var rawStr = CryptoJS.enc.Utf8.parse(HashOfferETS);",
+											"var Base64 = CryptoJS.enc.Base64.stringify(rawStr);",
+											"pm.globals.set(\"Base64\", Base64);",
+											"const time = require(\"moment\");",
+											"pm.globals.set(\"purchaseDate\", time.utc());",
+											"pm.globals.set(\"beginsAt\", time.utc().subtract(1, 'minutes'));",
+											"})",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"id": "9d365420-3bea-44de-8456-b774b85a98cf",
+										"exec": [
+											"setTimeout(function(){}, [5000]);"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "http://localhost:3000/customer_users?user_id=eq.{{UserRandom}}",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3000",
+									"path": [
+										"customer_users"
+									],
+									"query": [
+										{
+											"key": "user_id",
+											"value": "eq.{{UserRandom}}"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					],
+					"protocolProfileBehavior": {},
+					"_postman_isSubFolder": true
+				},
+				{
+					"name": "Sent first txn",
+					"item": [
+						{
+							"name": "Emulate UB webhook",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"id": "0e94176e-1fa5-4850-ab2b-2256020ab3db",
+										"exec": [
+											"pm.globals.set(\"status\", \"pending\");",
+											"postman.setGlobalVariable(\"amount\", _.random(1,1000000));",
+											"request.data = request.data.replace(\"{{Base64}}\", globals.Base64).replace(\"{{UserRandom}}\", globals.UserRandom).replace(\"{{amount}}\", globals.amount).replace(\"{{status}}\", \"pending\").replace(\"{{purchaseDate}}\", globals.purchaseDate).replace(\"{{UBmerchant}}\", environment.UBmerchant);",
+											"SHA256 = CryptoJS.HmacSHA256(request.data,globals.UBsecret).toString(CryptoJS.enc.Hex);",
+											"pm.globals.set(\"SHA256\", SHA256);",
+											"pm.request.headers.upsert({",
+											"    'key': \"X-Button-Signature\",",
+											"    'value': SHA256  ",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"id": "c7fce5d9-f31f-4e0c-a5a2-5785441c6a15",
+										"exec": [
+											"pm.test('status and response time check', function () {",
+											"\tpm.response.to.have.status(200);",
+											"\tpm.expect(pm.response.responseTime).to.be.below(2000);})",
+											"var moment = require(\"moment\");",
+											"var TS = moment.utc().format(\"YYYY-MM-DDTHH:mm\");",
+											"var TS1 = moment.utc().subtract(1, 'minutes').format(\"YYYY-MM-DDTHH:mm\");",
+											"pm.globals.set(\"sendtime\", TS);",
+											"pm.globals.set(\"sendtimesub1\", TS1);",
+											"pm.globals.set(\"whenUpdated\", TS);",
+											"pm.globals.set(\"whenUpdatedsub1\", TS1);",
+											"",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"type": "text",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"request_id\": \"attempt-XXX\",\n    \"data\": {\n        \"posting_rule_id\": null,\n        \"order_currency\": \"USD\",\n        \"modified_date\": \"2019-10-17T20:00:00.000Z\",\n        \"created_date\": \"2019-10-16T20:00:00.000Z\",\n        \"order_line_items\": [\n            {\n                \"identifier\": \"sku-1234\",\n                \"total\": 600,\n                \"amount\": 2000,\n                \"quantity\": 3,\n                \"publisher_commission\": 1000,\n                \"sku\": \"sku-1234\",\n                \"upc\": \"400000000001\",\n                \"category\": [\n                    \"Clothes\"\n                ],\n                \"description\": \"T-shirts\",\n                \"attributes\": {\n                    \"size\": \"M\"\n                }\n            }\n        ],\n        \"button_id\": \"btn-XXX\",\n        \"campaign_id\": \"camp-XXX\",\n        \"rate_card_id\": \"ratecard-XXX\",\n        \"order_id\": \"order-1\",\n        \"customer_order_id\": \"abcdef-123456\",\n        \"account_id\": \"acc-XXX\",\n        \"btn_ref\": \"srctok-XXYYZZ\",\n        \"currency\": \"USD\",\n        \"pub_ref\": \"publisher-token\",\n        \"status\": \"{{status}}\",\n        \"event_date\": \"{{purchaseDate}}\",\n        \"order_total\": {{amount}},\n        \"advertising_id\": \"aaaaaaaa-1111-3333-4444-999999999999\",\n        \"publisher_organization\": \"Descr\",\n        \"commerce_organization\": \"{{UBmerchant}}\",\n        \"amount\": 1000,\n        \"button_order_id\": \"btnorder-XXX\",\n        \"publisher_customer_id\": \"{{Base64}}\",\n        \"id\": \"{{UserRandom}}\",\n        \"order_click_channel\": \"app\",\n        \"category\": \"new-user-order\",\n        \"validated_date\": \"2019-10-18T19:02:09Z\"\n    },\n    \"id\": \"hook-XXX\",\n    \"event_type\": \"tx-validated\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{UseButtonserver}}/webhook/v1/usebutton",
+									"host": [
+										"{{UseButtonserver}}"
+									],
+									"path": [
+										"webhook",
+										"v1",
+										"usebutton"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Read txn id",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "f38607f0-6bd0-4bb2-862d-a62530b21465",
+										"exec": [
+											"pm.test('Status and response time check', function () {",
+											"\tpm.response.to.have.status(200);",
+											"\tpm.expect(pm.response.responseTime).to.be.below(5000);})",
+											"var jsonData = JSON.parse(responseBody);\t",
+											"pm.test('Txn exist?', function () {",
+											"    pm.expect(pm.response.text()).to.include(\"id\");",
+											"\tpm.globals.set(\"TxnID\", jsonData[0].id);",
+											"\tpm.globals.set(\"network\", jsonData[0].merchant_network);",
+											"\tpm.expect(jsonData[0].status).to.eql(\"pending\");})",
+											"pm.test('Is User_Id unique?', function () {pm.expect(jsonData.length).to.eql(1);})",
+											"",
+											"",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"id": "8f54e6d0-4154-4d66-9e6c-48eb63c45e6f",
+										"exec": [
+											"setTimeout(function(){}, [5000]);"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "http://localhost:3000/cashback_transaction?reference=eq.{{UserRandom}}",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3000",
+									"path": [
+										"cashback_transaction"
+									],
+									"query": [
+										{
+											"key": "reference",
+											"value": "eq.{{UserRandom}}"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Check delivery 1UB",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "f38607f0-6bd0-4bb2-862d-a62530b21465",
+										"exec": [
+											"pm.test('Status and response time check', function () {",
+											"\tpm.response.to.have.status(200);",
+											"\tpm.expect(pm.response.responseTime).to.be.below(5000);})",
+											"\t",
+											"pm.test('Update send?', function () {",
+											"\tlet TxnID = pm.globals.get(\"TxnID\");",
+											"\tvar jsonData = JSON.parse(responseBody);",
+											"    pm.expect(jsonData[0].txn_id).to.include(TxnID);",
+											"\tpm.expect(jsonData[0].failure_reason).to.eql(null);",
+											"\tpm.expect(jsonData[0].diff).to.eql(null);",
+											"\t",
+											"})",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"id": "d5464e20-98fd-4afc-b001-63db16828621",
+										"exec": [
+											"setTimeout(function(){}, [10000]);"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "http://localhost:3000/txn_delivery_log?txn_id=eq.{{TxnID}}&order=when_delivered",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3000",
+									"path": [
+										"txn_delivery_log"
+									],
+									"query": [
+										{
+											"key": "txn_id",
+											"value": "eq.{{TxnID}}"
+										},
+										{
+											"key": "order",
+											"value": "when_delivered"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Check test webhook",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "073a3abb-d8fb-49f5-bdde-60e7f8e45547",
+										"exec": [
+											"pm.test('Status and response time check', function () {",
+											"\tpm.response.to.have.status(200);",
+											"\tpm.expect(pm.response.responseTime).to.be.below(5000);})",
+											"var jsonData = JSON.parse(responseBody);\t",
+											"pm.test('Id check', function () {pm.expect(jsonData[jsonData.length-1].request[0].id).to.include(globals.TxnID);})",
+											"pm.test('Userid  check', function () {pm.expect(jsonData[jsonData.length-1].request[0].userId).to.include(globals.UserRandom);})",
+											"pm.test('customerName check', function () {pm.expect(jsonData[jsonData.length-1].request[0].customerName).to.include(environment.Customer);})",
+											"pm.test('merchantName check', function () {pm.expect(jsonData[jsonData.length-1].request[0].merchantName).to.include(environment.UBmerchant);})",
+											"pm.test('merchantNetwork check', function () {pm.expect(jsonData[jsonData.length-1].request[0].merchantNetwork).to.include(globals.network);})",
+											"pm.test('whenCreated check', function () {",
+											"    var t1 =  jsonData[jsonData.length-1].request[0].whenCreated.slice(14, 16);",
+											"    var t2 = globals.sendtime.slice(14, 16);",
+											"    if (t1==t2) {pm.expect(jsonData[jsonData.length-1].request[0].whenCreated).to.include(globals.sendtime);}",
+											"    else {pm.expect(jsonData[jsonData.length-1].request[0].whenCreated).to.include(globals.sendtimesub1);}})",
+											"pm.test('whenUpdated check', function () {",
+											"    var t1 =  jsonData[jsonData.length-1].request[0].whenUpdated.slice(14, 16);",
+											"    var t2 = globals.whenUpdated.slice(14, 16);",
+											"    if (t1==t2) {pm.expect(jsonData[jsonData.length-1].request[0].whenUpdated).to.include(globals.whenUpdated)}",
+											"    else {pm.expect(jsonData[jsonData.length-1].request[0].whenUpdated).to.include(globals.whenUpdatedsub1);}})    ",
+											"pm.test('purchaseDate check', function () {pm.expect(jsonData[jsonData.length-1].request[0].purchaseDate).to.include((globals.purchaseDate.substring(0, 19)));})",
+											"pm.test('purchaseAmount check', function () {pm.expect(jsonData[jsonData.length-1].request[0].purchaseAmount).to.eql((globals.amount/100));})",
+											"pm.test('purchaseCurrency check', function () {pm.expect(jsonData[jsonData.length-1].request[0].purchaseCurrency).to.include(\"USD\");})",
+											"// pm.test('cashbackBaseUSD check', function () {pm.expect(jsonData.cashbackBaseUSD).to.include(globals.UserRandom);})",
+											"pm.test('status check?', function () {pm.expect(jsonData[jsonData.length-1].request[0].status).to.include(globals.status);})",
+											"pm.test('diff check', function () {pm.expect(jsonData[jsonData.length-1].request[0].diff).to.eql(null);})",
+											"\t"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"id": "fbad4633-103a-476e-8718-dbb58f009438",
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://api-staging.spentlabs.com:8888/webhook",
+									"protocol": "http",
+									"host": [
+										"api-staging",
+										"spentlabs",
+										"com"
+									],
+									"port": "8888",
+									"path": [
+										"webhook"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Read txn from DB by ID",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "842dbffb-702b-4802-80dc-fae3e5c87afe",
+										"exec": [
+											"pm.test('Status and response time check', function () {",
+											"\tpm.response.to.have.status(200);",
+											"\tpm.expect(pm.response.responseTime).to.be.below(3000);})",
+											"var jsonData = JSON.parse(responseBody);",
+											"pm.test('Id check', function () {pm.expect(jsonData.id).to.include(globals.TxnID);})",
+											"pm.test('Userid  check', function () {pm.expect(jsonData.userId).to.include(globals.UserRandom);})",
+											"pm.test('customerName check', function () {pm.expect(jsonData.customerName).to.include(environment.Customer);})",
+											"pm.test('merchantName check', function () {pm.expect(jsonData.merchantName).to.include(environment.UBmerchant);})",
+											"pm.test('merchantNetwork check', function () {pm.expect(jsonData.merchantNetwork).to.include(globals.network);})",
+											"pm.test('whenCreated check', function () {",
+											"    var t1 =  jsonData.whenCreated.slice(14, 16);",
+											"    var t2 = globals.sendtime.slice(14, 16);",
+											"    if (t1==t2) {pm.expect(jsonData.whenCreated).to.include(globals.sendtime);}",
+											"    else {pm.expect(jsonData.whenCreated).to.include(globals.sendtimesub1);}})",
+											"pm.test('whenUpdated check', function () {",
+											"    var t1 =  jsonData.whenUpdated.slice(14, 16);",
+											"    var t2 = globals.whenUpdated.slice(14, 16);",
+											"    if (t1==t2) {pm.expect(jsonData.whenUpdated).to.include(globals.whenUpdated)}",
+											"    else {pm.expect(jsonData.whenUpdated).to.include(globals.whenUpdatedsub1);}})    ",
+											"pm.test('purchaseDate check', function () {pm.expect(jsonData.purchaseDate).to.include((globals.purchaseDate.substring(0, 19)));})",
+											"pm.test('purchaseAmount check', function () {pm.expect(jsonData.purchaseAmount).to.eql((globals.amount/100));})",
+											"pm.test('purchaseCurrency check', function () {pm.expect(jsonData.purchaseCurrency).to.include(\"USD\");})",
+											"// pm.test('cashbackBaseUSD check', function () {pm.expect(jsonData.cashbackBaseUSD).to.include(globals.UserRandom);})",
+											"pm.test('status check?', function () {pm.expect(jsonData.status).to.include(globals.status);})",
+											"pm.test('diff check', function () {pm.expect(jsonData.diff).to.eql(null);})",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"type": "text",
+										"value": " {{Token}}"
+									}
+								],
+								"url": {
+									"raw": "{{APIserver}}/api/v1/transactions/{{TxnID}}",
+									"host": [
+										"{{APIserver}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"transactions",
+										"{{TxnID}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Read txn from API via filters",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "842dbffb-702b-4802-80dc-fae3e5c87afe",
+										"exec": [
+											"pm.test('Status and response time check', function () {",
+											"\tpm.response.to.have.status(200);",
+											"\tpm.expect(pm.response.responseTime).to.be.below(3000);})",
+											"var jsonData = JSON.parse(responseBody);",
+											"pm.test('Id check', function () {pm.expect(jsonData[0].id).to.include(globals.TxnID);})",
+											"pm.test('Userid  check', function () {pm.expect(jsonData[0].userId).to.include(globals.UserRandom);})",
+											"pm.test('customerName check', function () {pm.expect(jsonData[0].customerName).to.include(environment.Customer);})",
+											"pm.test('merchantNetwork check', function () {pm.expect(jsonData[0].merchantNetwork).to.include(globals.network);})",
+											"pm.test('merchantName check', function () {pm.expect(jsonData[0].merchantName).to.include(environment.UBmerchant);})",
+											"pm.test('whenCreated check', function () {",
+											"    var t1 =  jsonData[0].whenCreated.slice(14, 16);",
+											"    var t2 = globals.sendtime.slice(14, 16);",
+											"    if (t1==t2) {pm.expect(jsonData[0].whenCreated).to.include(globals.sendtime);}",
+											"    else {pm.expect(jsonData[0].whenCreated).to.include(globals.sendtimesub1);}})",
+											"pm.test('whenUpdated check', function () {",
+											"    var t1 =  jsonData[0].whenUpdated.slice(14, 16);",
+											"    var t2 = globals.whenUpdated.slice(14, 16);",
+											"    if (t1==t2) {pm.expect(jsonData[0].whenUpdated).to.include(globals.whenUpdated)}",
+											"    else {pm.expect(jsonData[0].whenUpdated).to.include(globals.whenUpdatedsub1);}})    ",
+											"pm.test('purchaseDate check', function () {pm.expect(jsonData[0].purchaseDate).to.include((globals.purchaseDate.substring(0, 19)));})",
+											"pm.test('purchaseAmount check', function () {pm.expect(jsonData[0].purchaseAmount).to.eql((globals.amount/100));})",
+											"pm.test('purchaseCurrency check', function () {pm.expect(jsonData[0].purchaseCurrency).to.include(\"USD\");})",
+											"// pm.test('cashbackBaseUSD check', function () {pm.expect(jsonData.cashbackBaseUSD).to.include(globals.UserRandom);})",
+											"pm.test('status check?', function () {pm.expect(jsonData[0].status).to.include(globals.status);})",
+											"pm.test('diff check', function () {pm.expect(jsonData[0].diff).to.eql(null);})",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"id": "9bc7fb1c-43fc-4e50-836c-dc71a202a2b9",
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": " {{Token}}",
+										"type": "text"
+									},
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\"network\":\"{{network}}\",\n\"beginsAt\": \"{{beginsAt}}\",\n\"id\": \"{{TxnID}}\",\n\"offset\": 0,\n\"limit\": 1,\n\"merchant\": \"{{UBmerchant}}\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{APIserver}}/api/v1/transactions",
+									"host": [
+										"{{APIserver}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"transactions"
+									]
+								}
+							},
+							"response": []
+						}
+					],
+					"protocolProfileBehavior": {},
+					"_postman_isSubFolder": true
+				},
+				{
+					"name": "Sent update for first txn",
+					"item": [
+						{
+							"name": "Emulate UB webhook update",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"id": "0e94176e-1fa5-4850-ab2b-2256020ab3db",
+										"exec": [
+											"pm.globals.set(\"status\", \"locked\");",
+											"request.data = request.data.replace(\"{{Base64}}\", globals.Base64).replace(\"{{UserRandom}}\", globals.UserRandom).replace(\"{{amount}}\", globals.amount).replace(\"{{status}}\", \"locked\").replace(\"{{purchaseDate}}\", globals.purchaseDate).replace(\"{{UBmerchant}}\", environment.UBmerchant);",
+											"SHA256 = CryptoJS.HmacSHA256(request.data,globals.UBsecret).toString(CryptoJS.enc.Hex);",
+											"pm.globals.set(\"SHA256\", SHA256);",
+											"pm.request.headers.upsert({",
+											"    'key': \"X-Button-Signature\",",
+											"    'value': SHA256  ",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"id": "c7fce5d9-f31f-4e0c-a5a2-5785441c6a15",
+										"exec": [
+											"pm.test('status and response time check', function () {",
+											"\tpm.response.to.have.status(200);",
+											"\tpm.expect(pm.response.responseTime).to.be.below(2000);})",
+											"const time = require(\"moment\");",
+											"var TS = time.utc().format(\"YYYY-MM-DDTHH:mm\");",
+											"var TS1 = time.utc().subtract(1, 'minutes').format(\"YYYY-MM-DDTHH:mm\");",
+											"pm.globals.set(\"whenUpdated\", TS);",
+											"pm.globals.set(\"whenUpdatedsub1\", TS1);",
+											"pm.globals.set(\"status\", \"available\");",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"request_id\": \"attempt-XXX\",\n    \"data\": {\n        \"posting_rule_id\": null,\n        \"order_currency\": \"USD\",\n        \"modified_date\": \"2019-10-17T20:00:00.000Z\",\n        \"created_date\": \"2019-10-16T20:00:00.000Z\",\n        \"order_line_items\": [\n            {\n                \"identifier\": \"sku-1234\",\n                \"total\": 600,\n                \"amount\": 2000,\n                \"quantity\": 3,\n                \"publisher_commission\": 1000,\n                \"sku\": \"sku-1234\",\n                \"upc\": \"400000000001\",\n                \"category\": [\n                    \"Clothes\"\n                ],\n                \"description\": \"T-shirts\",\n                \"attributes\": {\n                    \"size\": \"M\"\n                }\n            }\n        ],\n        \"button_id\": \"btn-XXX\",\n        \"campaign_id\": \"camp-XXX\",\n        \"rate_card_id\": \"ratecard-XXX\",\n        \"order_id\": \"order-1\",\n        \"customer_order_id\": \"abcdef-123456\",\n        \"account_id\": \"acc-XXX\",\n        \"btn_ref\": \"srctok-XXYYZZ\",\n        \"currency\": \"USD\",\n        \"pub_ref\": \"publisher-token\",\n        \"status\": \"{{status}}\",\n        \"event_date\": \"{{purchaseDate}}\",\n        \"order_total\": {{amount}},\n        \"advertising_id\": \"aaaaaaaa-1111-3333-4444-999999999999\",\n        \"publisher_organization\": \"Descr\",\n        \"commerce_organization\": \"{{UBmerchant}}\",\n        \"amount\": 1000,\n        \"button_order_id\": \"btnorder-XXX\",\n        \"publisher_customer_id\": \"{{Base64}}\",\n        \"id\": \"{{UserRandom}}\",\n        \"order_click_channel\": \"app\",\n        \"category\": \"new-user-order\",\n        \"validated_date\": \"2019-10-18T19:02:09Z\"\n    },\n    \"id\": \"hook-XXX\",\n    \"event_type\": \"tx-validated\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{UseButtonserver}}/webhook/v1/usebutton",
+									"host": [
+										"{{UseButtonserver}}"
+									],
+									"path": [
+										"webhook",
+										"v1",
+										"usebutton"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Status change test",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "f38607f0-6bd0-4bb2-862d-a62530b21465",
+										"exec": [
+											"pm.test('Status and response time check', function () {",
+											"\tpm.response.to.have.status(200);",
+											"\tpm.expect(pm.response.responseTime).to.be.below(5000);})",
+											"\t",
+											"pm.test('Txn updated?', function () {",
+											"    pm.expect(pm.response.text()).to.include(\"id\");",
+											"\tvar jsonData = JSON.parse(responseBody);",
+											"\tpm.expect(jsonData[0].id).to.eql(globals.TxnID);",
+											"\tpm.expect(jsonData[0].status).to.eql(\"available\");",
+											"})",
+											"",
+											"",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"id": "8f54e6d0-4154-4d66-9e6c-48eb63c45e6f",
+										"exec": [
+											"setTimeout(function(){}, [5000]);"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "http://localhost:3000/cashback_transaction?reference=eq.{{UserRandom}}",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3000",
+									"path": [
+										"cashback_transaction"
+									],
+									"query": [
+										{
+											"key": "reference",
+											"value": "eq.{{UserRandom}}"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Read delivery_log Update",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "f38607f0-6bd0-4bb2-862d-a62530b21465",
+										"exec": [
+											"pm.test('Status and response time check', function () {",
+											"\tpm.response.to.have.status(200);",
+											"\tpm.expect(pm.response.responseTime).to.be.below(5000);})",
+											"var jsonData = JSON.parse(responseBody);\t",
+											"pm.test('Update send?', function () {",
+											"\tlet TxnID = pm.globals.get(\"TxnID\");",
+											"\tpm.expect(jsonData.length).to.eql(2);",
+											"    pm.expect(jsonData[1].txn_id).to.include(TxnID);",
+											"\tpm.expect(jsonData[1].failure_reason).to.eql(null);})",
+											"pm.test('Diff right?', function () {",
+											"\tpm.expect(jsonData[1].diff.status).to.eql(\"pending\");",
+											"\t",
+											"})",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"id": "d5464e20-98fd-4afc-b001-63db16828621",
+										"exec": [
+											"setTimeout(function(){}, [10000]);"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "http://localhost:3000/txn_delivery_log?txn_id=eq.{{TxnID}}&order=when_delivered",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3000",
+									"path": [
+										"txn_delivery_log"
+									],
+									"query": [
+										{
+											"key": "txn_id",
+											"value": "eq.{{TxnID}}"
+										},
+										{
+											"key": "order",
+											"value": "when_delivered"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Check test webhook on update",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "073a3abb-d8fb-49f5-bdde-60e7f8e45547",
+										"exec": [
+											"pm.test('Status and response time check', function () {",
+											"\tpm.response.to.have.status(200);",
+											"\tpm.expect(pm.response.responseTime).to.be.below(5000);})",
+											"var jsonData = JSON.parse(responseBody);\t",
+											"pm.test('Id check', function () {pm.expect(jsonData[jsonData.length-1].request[0].id).to.include(globals.TxnID);})",
+											"pm.test('Userid  check', function () {pm.expect(jsonData[jsonData.length-1].request[0].userId).to.include(globals.UserRandom);})",
+											"pm.test('customerName check', function () {pm.expect(jsonData[jsonData.length-1].request[0].customerName).to.include(environment.Customer);})",
+											"pm.test('merchantName check', function () {pm.expect(jsonData[jsonData.length-1].request[0].merchantName).to.include(environment.UBmerchant);})",
+											"pm.test('merchantNetwork check', function () {pm.expect(jsonData[jsonData.length-1].request[0].merchantNetwork).to.include(globals.network);})",
+											"pm.test('whenCreated check', function () {",
+											"    var t1 =  jsonData[jsonData.length-1].request[0].whenCreated.slice(14, 16);",
+											"    var t2 = globals.sendtime.slice(14, 16);",
+											"    if (t1==t2) {pm.expect(jsonData[jsonData.length-1].request[0].whenCreated).to.include(globals.sendtime);}",
+											"    else {pm.expect(jsonData[jsonData.length-1].request[0].whenCreated).to.include(globals.sendtimesub1);}})",
+											"pm.test('whenUpdated check', function () {",
+											"    var t1 =  jsonData[jsonData.length-1].request[0].whenUpdated.slice(14, 16);",
+											"    var t2 = globals.whenUpdated.slice(14, 16);",
+											"    if (t1==t2) {pm.expect(jsonData[jsonData.length-1].request[0].whenUpdated).to.include(globals.whenUpdated)}",
+											"    else {pm.expect(jsonData[jsonData.length-1].request[0].whenUpdated).to.include(globals.whenUpdatedsub1);}})    ",
+											"pm.test('purchaseDate check', function () {pm.expect(jsonData[jsonData.length-1].request[0].purchaseDate).to.include((globals.purchaseDate.substring(0, 19)));})",
+											"pm.test('purchaseAmount check', function () {pm.expect(jsonData[jsonData.length-1].request[0].purchaseAmount).to.eql((globals.amount/100));})",
+											"pm.test('purchaseCurrency check', function () {pm.expect(jsonData[jsonData.length-1].request[0].purchaseCurrency).to.include(\"USD\");})",
+											"// pm.test('cashbackBaseUSD check', function () {pm.expect(jsonData.cashbackBaseUSD).to.include(globals.UserRandom);})",
+											"pm.test('status check?', function () {pm.expect(jsonData[jsonData.length-1].request[0].status).to.include(globals.status);})",
+											"pm.test('diff check', function () {pm.expect(jsonData[jsonData.length-1].request[0].diff.status).to.eql(\"pending\");})",
+											"\t"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"id": "fbad4633-103a-476e-8718-dbb58f009438",
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://api-staging.spentlabs.com:8888/webhook",
+									"protocol": "http",
+									"host": [
+										"api-staging",
+										"spentlabs",
+										"com"
+									],
+									"port": "8888",
+									"path": [
+										"webhook"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Read updated txn from DB by ID",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "842dbffb-702b-4802-80dc-fae3e5c87afe",
+										"exec": [
+											"pm.test('Status and response time check', function () {",
+											"\tpm.response.to.have.status(200);",
+											"\tpm.expect(pm.response.responseTime).to.be.below(3000);})",
+											"var jsonData = JSON.parse(responseBody);",
+											"pm.test('Id check', function () {pm.expect(jsonData.id).to.include(globals.TxnID);})",
+											"pm.test('Userid  check', function () {pm.expect(jsonData.userId).to.include(globals.UserRandom);})",
+											"pm.test('customerName check', function () {pm.expect(jsonData.customerName).to.include(environment.Customer);})",
+											"pm.test('merchantName check', function () {pm.expect(jsonData.merchantName).to.include(environment.UBmerchant);})",
+											"pm.test('merchantNetwork check', function () {pm.expect(jsonData.merchantNetwork).to.include(globals.network);})",
+											"pm.test('whenCreated check', function () {",
+											"    var t1 =  jsonData.whenCreated.slice(14, 16);",
+											"    var t2 = globals.sendtime.slice(14, 16);",
+											"    if (t1==t2) {pm.expect(jsonData.whenCreated).to.include(globals.sendtime);}",
+											"    else {pm.expect(jsonData.whenCreated).to.include(globals.sendtimesub1);}})",
+											"pm.test('whenUpdated check', function () {",
+											"    var t1 =  jsonData.whenUpdated.slice(14, 16);",
+											"    var t2 = globals.whenUpdated.slice(14, 16);",
+											"    if (t1==t2) {pm.expect(jsonData.whenUpdated).to.include(globals.whenUpdated)}",
+											"    else {pm.expect(jsonData.whenUpdated).to.include(globals.whenUpdatedsub1);}})    ",
+											"pm.test('purchaseDate check', function () {pm.expect(jsonData.purchaseDate).to.include((globals.purchaseDate.substring(0, 19)));})",
+											"pm.test('purchaseAmount check', function () {pm.expect(jsonData.purchaseAmount).to.eql((globals.amount/100));})",
+											"pm.test('purchaseCurrency check', function () {pm.expect(jsonData.purchaseCurrency).to.include(\"USD\");})",
+											"// pm.test('cashbackBaseUSD check', function () {pm.expect(jsonData.cashbackBaseUSD).to.include(globals.UserRandom);})",
+											"pm.test('status check?', function () {pm.expect(jsonData.status).to.include(globals.status);})",
+											"pm.test('diff check', function () {pm.expect(jsonData.diff).to.eql(null);})",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"type": "text",
+										"value": " {{Token}}"
+									}
+								],
+								"url": {
+									"raw": "{{APIserver}}/api/v1/transactions/{{TxnID}}",
+									"host": [
+										"{{APIserver}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"transactions",
+										"{{TxnID}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Read updated txn from API via filters",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "842dbffb-702b-4802-80dc-fae3e5c87afe",
+										"exec": [
+											"pm.test('Status and response time check', function () {",
+											"\tpm.response.to.have.status(200);",
+											"\tpm.expect(pm.response.responseTime).to.be.below(3000);})",
+											"var jsonData = JSON.parse(responseBody);",
+											"pm.test('Id check', function () {pm.expect(jsonData[0].id).to.include(globals.TxnID);})",
+											"pm.test('Userid  check', function () {pm.expect(jsonData[0].userId).to.include(globals.UserRandom);})",
+											"pm.test('customerName check', function () {pm.expect(jsonData[0].customerName).to.include(environment.Customer);})",
+											"pm.test('merchantName check', function () {pm.expect(jsonData[0].merchantName).to.include(environment.UBmerchant);})",
+											"pm.test('merchantNetwork check', function () {pm.expect(jsonData[0].merchantNetwork).to.include(globals.network);})",
+											"pm.test('whenCreated check', function () {",
+											"    var t1 =  jsonData[0].whenCreated.slice(14, 16);",
+											"    var t2 = globals.sendtime.slice(14, 16);",
+											"    if (t1==t2) {pm.expect(jsonData[0].whenCreated).to.include(globals.sendtime);}",
+											"    else {pm.expect(jsonData[0].whenCreated).to.include(globals.sendtimesub1);}})",
+											"pm.test('whenUpdated check', function () {",
+											"    var t1 =  jsonData[0].whenUpdated.slice(14, 16);",
+											"    var t2 = globals.whenUpdated.slice(14, 16);",
+											"    if (t1==t2) {pm.expect(jsonData[0].whenUpdated).to.include(globals.whenUpdated)}",
+											"    else {pm.expect(jsonData[0].whenUpdated).to.include(globals.whenUpdatedsub1);}})    ",
+											"pm.test('purchaseDate check', function () {pm.expect(jsonData[0].purchaseDate).to.include((globals.purchaseDate.substring(0, 19)));})",
+											"pm.test('purchaseAmount check', function () {pm.expect(jsonData[0].purchaseAmount).to.eql((globals.amount/100));})",
+											"pm.test('purchaseCurrency check', function () {pm.expect(jsonData[0].purchaseCurrency).to.include(\"USD\");})",
+											"// pm.test('cashbackBaseUSD check', function () {pm.expect(jsonData.cashbackBaseUSD).to.include(globals.UserRandom);})",
+											"pm.test('status check?', function () {pm.expect(jsonData[0].status).to.include(globals.status);})",
+											"pm.test('diff check', function () {pm.expect(jsonData[0].diff).to.eql(null);})",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"id": "9bc7fb1c-43fc-4e50-836c-dc71a202a2b9",
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": " {{Token}}",
+										"type": "text"
+									},
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\"network\":\"{{network}}\",\n\"beginsAt\": \"{{beginsAt}}\",\n\"id\": \"{{TxnID}}\",\n\"offset\": 0,\n\"limit\": 1,\n\"merchant\": \"{{UBmerchant}}\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{APIserver}}/api/v1/transactions",
+									"host": [
+										"{{APIserver}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"transactions"
+									]
+								}
+							},
+							"response": []
+						}
+					],
+					"protocolProfileBehavior": {},
+					"_postman_isSubFolder": true
+				},
+				{
+					"name": "Send second txn",
+					"item": [
+						{
+							"name": "UB WH 2 txn Rej",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"id": "0e94176e-1fa5-4850-ab2b-2256020ab3db",
+										"exec": [
+											"pm.globals.set(\"status\", \"rejected\");",
+											"postman.setGlobalVariable(\"amount\", _.random(1,1000000));",
+											"request.data = request.data.replace(\"{{Base64}}\", globals.Base64).replace(\"{{UserRandom}}\", globals.UserRandom).replace(\"{{amount}}\", globals.amount).replace(\"{{status}}\", \"rejected\").replace(\"{{purchaseDate}}\", globals.purchaseDate).replace(\"{{UBmerchant}}\", environment.UBmerchant);",
+											"SHA256 = CryptoJS.HmacSHA256(request.data,globals.UBsecret).toString(CryptoJS.enc.Hex);",
+											"pm.globals.set(\"SHA256\", SHA256);",
+											"pm.request.headers.upsert({",
+											"    'key': \"X-Button-Signature\",",
+											"    'value': SHA256  ",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"id": "c7fce5d9-f31f-4e0c-a5a2-5785441c6a15",
+										"exec": [
+											"pm.test('status and response time check', function () {",
+											"\tpm.response.to.have.status(200);",
+											"\tpm.expect(pm.response.responseTime).to.be.below(2000);})",
+											"var moment = require(\"moment\");",
+											"var TS = moment.utc().format(\"YYYY-MM-DDTHH:mm\");",
+											"var TS1 = moment.utc().subtract(1, 'minutes').format(\"YYYY-MM-DDTHH:mm\");",
+											"pm.globals.set(\"sendtime\", TS);",
+											"pm.globals.set(\"sendtimesub1\", TS1);",
+											"pm.globals.set(\"whenUpdated\", TS);",
+											"pm.globals.set(\"whenUpdatedsub1\", TS1);",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"request_id\": \"attempt-XXX\",\n    \"data\": {\n        \"posting_rule_id\": null,\n        \"order_currency\": \"USD\",\n        \"modified_date\": \"2019-10-17T20:00:00.000Z\",\n        \"created_date\": \"2019-10-16T20:00:00.000Z\",\n        \"order_line_items\": [\n            {\n                \"identifier\": \"sku-1234\",\n                \"total\": 600,\n                \"amount\": 2000,\n                \"quantity\": 3,\n                \"publisher_commission\": 1000,\n                \"sku\": \"sku-1234\",\n                \"upc\": \"400000000001\",\n                \"category\": [\n                    \"Clothes\"\n                ],\n                \"description\": \"T-shirts\",\n                \"attributes\": {\n                    \"size\": \"M\"\n                }\n            }\n        ],\n        \"button_id\": \"btn-XXX\",\n        \"campaign_id\": \"camp-XXX\",\n        \"rate_card_id\": \"ratecard-XXX\",\n        \"order_id\": \"order-1\",\n        \"customer_order_id\": \"abcdef-123456\",\n        \"account_id\": \"acc-XXX\",\n        \"btn_ref\": \"srctok-XXYYZZ\",\n        \"currency\": \"USD\",\n        \"pub_ref\": \"publisher-token\",\n        \"status\": \"{{status}}\",\n        \"event_date\": \"{{purchaseDate}}\",\n        \"order_total\": {{amount}},\n        \"advertising_id\": \"aaaaaaaa-1111-3333-4444-999999999999\",\n        \"publisher_organization\": \"Descr\",\n        \"commerce_organization\": \"{{UBmerchant}}\",\n        \"amount\": 1000,\n        \"button_order_id\": \"btnorder-XXX\",\n        \"publisher_customer_id\": \"{{Base64}}\",\n        \"id\": \"{{UserRandom}}1\",\n        \"order_click_channel\": \"app\",\n        \"category\": \"new-user-order\",\n        \"validated_date\": \"2019-10-18T19:02:09Z\"\n    },\n    \"id\": \"hook-XXX\",\n    \"event_type\": \"tx-validated\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{UseButtonserver}}/webhook/v1/usebutton",
+									"host": [
+										"{{UseButtonserver}}"
+									],
+									"path": [
+										"webhook",
+										"v1",
+										"usebutton"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Read id for 2 UB txn",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "f38607f0-6bd0-4bb2-862d-a62530b21465",
+										"exec": [
+											"pm.test('Status and response time check', function () {",
+											"\tpm.response.to.have.status(200);",
+											"\tpm.expect(pm.response.responseTime).to.be.below(5000);})",
+											"\t",
+											"pm.test('Txn exist?', function () {",
+											"    pm.expect(pm.response.text()).to.include(\"id\");",
+											"\tvar jsonData = JSON.parse(responseBody);",
+											"\tpm.globals.set(\"TxnID\", jsonData[0].id);",
+											"})",
+											"",
+											"",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"id": "8f54e6d0-4154-4d66-9e6c-48eb63c45e6f",
+										"exec": [
+											"setTimeout(function(){}, [5000]);"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "http://localhost:3000/cashback_transaction?reference=eq.{{UserRandom}}1",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3000",
+									"path": [
+										"cashback_transaction"
+									],
+									"query": [
+										{
+											"key": "reference",
+											"value": "eq.{{UserRandom}}1"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Check delivery 2UB",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "f38607f0-6bd0-4bb2-862d-a62530b21465",
+										"exec": [
+											"pm.test('Status and response time check', function () {",
+											"\tpm.response.to.have.status(200);",
+											"\tpm.expect(pm.response.responseTime).to.be.below(5000);})",
+											"\t",
+											"pm.test('Update send?', function () {",
+											"\tlet TxnID = pm.globals.get(\"TxnID\");",
+											"\tvar jsonData = JSON.parse(responseBody);",
+											"    pm.expect(jsonData[0].txn_id).to.include(TxnID);",
+											"\tpm.expect(jsonData[0].failure_reason).to.eql(null);",
+											"\tpm.expect(jsonData[0].diff).to.eql(null);",
+											"\t",
+											"})",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"id": "d5464e20-98fd-4afc-b001-63db16828621",
+										"exec": [
+											"setTimeout(function(){}, [10000]);"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "http://localhost:3000/txn_delivery_log?txn_id=eq.{{TxnID}}&order=when_delivered",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3000",
+									"path": [
+										"txn_delivery_log"
+									],
+									"query": [
+										{
+											"key": "txn_id",
+											"value": "eq.{{TxnID}}"
+										},
+										{
+											"key": "order",
+											"value": "when_delivered"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Check test webhook on update",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "073a3abb-d8fb-49f5-bdde-60e7f8e45547",
+										"exec": [
+											"pm.test('Status and response time check', function () {",
+											"\tpm.response.to.have.status(200);",
+											"\tpm.expect(pm.response.responseTime).to.be.below(5000);})",
+											"var jsonData = JSON.parse(responseBody);\t",
+											"pm.test('Id check', function () {pm.expect(jsonData[jsonData.length-1].request[0].id).to.include(globals.TxnID);})",
+											"pm.test('Userid  check', function () {pm.expect(jsonData[jsonData.length-1].request[0].userId).to.include(globals.UserRandom);})",
+											"pm.test('customerName check', function () {pm.expect(jsonData[jsonData.length-1].request[0].customerName).to.include(environment.Customer);})",
+											"pm.test('merchantName check', function () {pm.expect(jsonData[jsonData.length-1].request[0].merchantName).to.include(environment.UBmerchant);})",
+											"pm.test('merchantNetwork check', function () {pm.expect(jsonData[jsonData.length-1].request[0].merchantNetwork).to.include(globals.network);})",
+											"pm.test('whenCreated check', function () {",
+											"    var t1 =  jsonData[jsonData.length-1].request[0].whenCreated.slice(14, 16);",
+											"    var t2 = globals.sendtime.slice(14, 16);",
+											"    if (t1==t2) {pm.expect(jsonData[jsonData.length-1].request[0].whenCreated).to.include(globals.sendtime);}",
+											"    else {pm.expect(jsonData[jsonData.length-1].request[0].whenCreated).to.include(globals.sendtimesub1);}})",
+											"pm.test('whenUpdated check', function () {",
+											"    var t1 =  jsonData[jsonData.length-1].request[0].whenUpdated.slice(14, 16);",
+											"    var t2 = globals.whenUpdated.slice(14, 16);",
+											"    if (t1==t2) {pm.expect(jsonData[jsonData.length-1].request[0].whenUpdated).to.include(globals.whenUpdated)}",
+											"    else {pm.expect(jsonData[jsonData.length-1].request[0].whenUpdated).to.include(globals.whenUpdatedsub1);}})    ",
+											"pm.test('purchaseDate check', function () {pm.expect(jsonData[jsonData.length-1].request[0].purchaseDate).to.include((globals.purchaseDate.substring(0, 19)));})",
+											"pm.test('purchaseAmount check', function () {pm.expect(jsonData[jsonData.length-1].request[0].purchaseAmount).to.eql((globals.amount/100));})",
+											"pm.test('purchaseCurrency check', function () {pm.expect(jsonData[jsonData.length-1].request[0].purchaseCurrency).to.include(\"USD\");})",
+											"// pm.test('cashbackBaseUSD check', function () {pm.expect(jsonData.cashbackBaseUSD).to.include(globals.UserRandom);})",
+											"pm.test('status check?', function () {pm.expect(jsonData[jsonData.length-1].request[0].status).to.include(globals.status);})",
+											"pm.test('diff check', function () {pm.expect(jsonData[jsonData.length-1].request[0].diff).to.eql(null);})",
+											"\t"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"id": "fbad4633-103a-476e-8718-dbb58f009438",
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://api-staging.spentlabs.com:8888/webhook",
+									"protocol": "http",
+									"host": [
+										"api-staging",
+										"spentlabs",
+										"com"
+									],
+									"port": "8888",
+									"path": [
+										"webhook"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Read txn from DB by ID",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "842dbffb-702b-4802-80dc-fae3e5c87afe",
+										"exec": [
+											"pm.test('Status and response time check', function () {",
+											"\tpm.response.to.have.status(200);",
+											"\tpm.expect(pm.response.responseTime).to.be.below(3000);})",
+											"var jsonData = JSON.parse(responseBody);",
+											"pm.test('Id check', function () {pm.expect(jsonData.id).to.include(globals.TxnID);})",
+											"pm.test('Userid  check', function () {pm.expect(jsonData.userId).to.include(globals.UserRandom);})",
+											"pm.test('customerName check', function () {pm.expect(jsonData.customerName).to.include(environment.Customer);})",
+											"pm.test('merchantName check', function () {pm.expect(jsonData.merchantName).to.include(environment.UBmerchant);})",
+											"pm.test('merchantNetwork check', function () {pm.expect(jsonData.merchantNetwork).to.include(globals.network);})",
+											"pm.test('whenCreated check', function () {",
+											"    var t1 =  jsonData.whenCreated.slice(14, 16);",
+											"    var t2 = globals.sendtime.slice(14, 16);",
+											"    if (t1==t2) {pm.expect(jsonData.whenCreated).to.include(globals.sendtime);}",
+											"    else {pm.expect(jsonData.whenCreated).to.include(globals.sendtimesub1);}})",
+											"pm.test('whenUpdated check', function () {",
+											"    var t1 =  jsonData.whenUpdated.slice(14, 16);",
+											"    var t2 = globals.whenUpdated.slice(14, 16);",
+											"    if (t1==t2) {pm.expect(jsonData.whenUpdated).to.include(globals.whenUpdated)}",
+											"    else {pm.expect(jsonData.whenUpdated).to.include(globals.whenUpdatedsub1);}})    ",
+											"pm.test('purchaseDate check', function () {pm.expect(jsonData.purchaseDate).to.include((globals.purchaseDate.substring(0, 19)));})",
+											"pm.test('purchaseAmount check', function () {pm.expect(jsonData.purchaseAmount).to.eql((globals.amount/100));})",
+											"pm.test('purchaseCurrency check', function () {pm.expect(jsonData.purchaseCurrency).to.include(\"USD\");})",
+											"// pm.test('cashbackBaseUSD check', function () {pm.expect(jsonData.cashbackBaseUSD).to.include(globals.UserRandom);})",
+											"pm.test('status check?', function () {pm.expect(jsonData.status).to.include(globals.status);})",
+											"pm.test('diff check', function () {pm.expect(jsonData.diff).to.eql(null);})",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"type": "text",
+										"value": " {{Token}}"
+									}
+								],
+								"url": {
+									"raw": "{{APIserver}}/api/v1/transactions/{{TxnID}}",
+									"host": [
+										"{{APIserver}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"transactions",
+										"{{TxnID}}"
+									]
+								}
+							},
+							"response": []
+						}
+					],
+					"protocolProfileBehavior": {},
+					"_postman_isSubFolder": true
+				}
+			],
+			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "Azigo txn processing test CRAP",
+			"item": [
+				{
+					"name": "offer search",
+					"item": [
+						{
+							"name": "Offer search",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "35450045-0dfa-4002-97ff-84f6f19b29b9",
+										"exec": [
+											"var jsonData = JSON.parse(responseBody);",
+											"let UserRandom = pm.globals.get(\"UserRandom\");\t",
+											"postman.setGlobalVariable(\"OfferLink\", jsonData[0].offers[0].trackingUrl+\"&user=\"+UserRandom);",
+											"postman.setGlobalVariable(\"OfferId\", jsonData[0].offers[0].offerId);",
+											"pm.test('status and response time check', function () {",
+											"\tpm.response.to.have.status(200);",
+											"\tpm.expect(pm.response.responseTime).to.be.below(3000);",
+											"\t",
+											"})"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"id": "be769177-18f8-44cd-b1e3-67eb78114164",
+										"exec": [
+											"postman.setGlobalVariable(\"UserRandom\", _.random(10000,1000000));"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": " {{Token}}",
+										"type": "text"
+									},
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"search\": \"{{Amerchant}}\"\n }",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{APIserver}}/api/v1/offers",
+									"host": [
+										"{{APIserver}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"offers"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "click",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "4f13f226-8ebf-4dcd-95c5-5646548d20bc",
+										"exec": [
+											"pm.test('status check', function () {",
+											"\tpm.response.to.have.status(200);})"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{OfferLink}}",
+									"host": [
+										"{{OfferLink}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Read hash",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "2ddbc981-5463-4159-8a1a-f1d544cafba7",
+										"exec": [
+											"pm.test('Hash exist?', function () {",
+											"\tpm.response.to.have.status(200);",
+											"\tpm.expect(pm.response.responseTime).to.be.below(5000);",
+											"    pm.expect(pm.response.text()).to.include(\"hash\");",
+											"\tvar jsonData = JSON.parse(responseBody);",
+											"\tlet UserRandom = pm.globals.get(\"UserRandom\");",
+											"\tpm.globals.set(\"Hash\", jsonData[0].hash);",
+											"})",
+											"pm.test('Generate BASE64...', function () {",
+											"var Hash = pm.globals.get('Hash');",
+											"var OfferId = pm.globals.get('OfferId');",
+											"var UserRandom = pm.globals.get('UserRandom');",
+											"const moment = require('moment');",
+											"pm.globals.set(\"EpochTS\", moment().valueOf());",
+											"var TimeStamp = pm.globals.get('EpochTS');",
+											"var HashOfferETS = Hash+\"|\"+OfferId+\"|\"+TimeStamp;",
+											"var CryptoJS = require(\"crypto-js\");",
+											"var rawStr = CryptoJS.enc.Utf8.parse(HashOfferETS);",
+											"var Base64 = CryptoJS.enc.Base64.stringify(rawStr);",
+											"pm.globals.set(\"Base64\", Base64);",
+											"const time = require(\"moment\");",
+											"pm.globals.set(\"purchaseDate\", time.utc());",
+											"pm.globals.set(\"beginsAt\", time.utc().subtract(1, 'minutes'));",
+											"})",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"id": "9d365420-3bea-44de-8456-b774b85a98cf",
+										"exec": [
+											"setTimeout(function(){}, [5000]);"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "http://localhost:3000/customer_users?user_id=eq.{{UserRandom}}",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3000",
+									"path": [
+										"customer_users"
+									],
+									"query": [
+										{
+											"key": "user_id",
+											"value": "eq.{{UserRandom}}"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					],
+					"protocolProfileBehavior": {},
+					"_postman_isSubFolder": true
+				},
+				{
+					"name": "Sent first txn",
+					"item": [
+						{
+							"name": "Azigo crap",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"id": "0e94176e-1fa5-4850-ab2b-2256020ab3db",
+										"exec": [
+											"pm.globals.set(\"status\", \"pending\");",
+											"postman.setGlobalVariable(\"amount\", (_.random(1,1000000)/100));",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"id": "c7fce5d9-f31f-4e0c-a5a2-5785441c6a15",
+										"exec": [
+											"pm.test('status and response time check', function () {",
+											"\tpm.response.to.have.status(200);",
+											"\tpm.expect(pm.response.responseTime).to.be.below(2000);})",
+											"var moment = require(\"moment\");",
+											"var TS = moment.utc().format(\"YYYY-MM-DDTHH:mm\");",
+											"var TS1 = moment.utc().subtract(1, 'minutes').format(\"YYYY-MM-DDTHH:mm\");",
+											"pm.globals.set(\"sendtime\", TS);",
+											"pm.globals.set(\"sendtimesub1\", TS1);",
+											"pm.globals.set(\"whenUpdated\", TS);",
+											"pm.globals.set(\"whenUpdatedsub1\", TS1);",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"type": "text",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"programName\": \"SPENT\",\n\t\"userEmail\": \"\",\n\t\"status\": \"{{status}}\",\n\t\"uniqueRecordId\":\"{{UserRandom}}\",\n\t\"suppliedSubProgramId\": \"\",\n\t\"transactionId\": 47112006,\n\t\"storeOrderId\": \"9119973897547\",\n\t\"userId\": \"1234\",\n\t\"suppliedUserId\": \"{{Base64}}\",\n\t\"storeName\": \"{{Amerchant}}\",\n\t\"tentativeCannotChangeAfterDate\": 1536969600,\n\t\"tentativeCannotChangeAfterDatetime\": \"2019-09-15T00:00:00/.000Z\",\n\t\"timestamp\": 1530569679,\n\t\"datetime\": \"{{purchaseDate}}\",\n\t\"postDatetime\": \"{{purchaseDate}}\",\n\t\"sale\": {{amount}},\n\t\"commission\": 0.44,\n\t\"userCommission\": 0.33,\n\t\"sourceType\": \"site\",\n\t\"resellerPayoutDate\": null,\n\t\"logoUrl\": \"https://s3.amazonaws.com/storeslogo/459720\"\n}\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{AZIGOserver}}/crap/txn",
+									"host": [
+										"{{AZIGOserver}}"
+									],
+									"path": [
+										"crap",
+										"txn"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Read txn id",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "f38607f0-6bd0-4bb2-862d-a62530b21465",
+										"exec": [
+											"pm.test('Status and response time check', function () {",
+											"\tpm.response.to.have.status(200);",
+											"\tpm.expect(pm.response.responseTime).to.be.below(5000);})",
+											"var jsonData = JSON.parse(responseBody);\t",
+											"pm.test('Txn exist?', function () {",
+											"    pm.expect(pm.response.text()).to.include(\"id\");",
+											"\tpm.globals.set(\"TxnID\", jsonData[0].id);",
+											"\tpm.globals.set(\"network\", jsonData[0].merchant_network);",
+											"\tpm.expect(jsonData[0].status).to.eql(\"pending\");})",
+											"pm.test('Is User_Id unique?', function () {pm.expect(jsonData.length).to.eql(1);})",
+											"",
+											"",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"id": "8f54e6d0-4154-4d66-9e6c-48eb63c45e6f",
+										"exec": [
+											"setTimeout(function(){}, [5000]);"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "http://localhost:3000/cashback_transaction?reference=eq.{{UserRandom}}",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3000",
+									"path": [
+										"cashback_transaction"
+									],
+									"query": [
+										{
+											"key": "reference",
+											"value": "eq.{{UserRandom}}"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Check delivery 1UB",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "f38607f0-6bd0-4bb2-862d-a62530b21465",
+										"exec": [
+											"pm.test('Status and response time check', function () {",
+											"\tpm.response.to.have.status(200);",
+											"\tpm.expect(pm.response.responseTime).to.be.below(5000);})",
+											"\t",
+											"pm.test('Update send?', function () {",
+											"\tlet TxnID = pm.globals.get(\"TxnID\");",
+											"\tvar jsonData = JSON.parse(responseBody);",
+											"    pm.expect(jsonData[0].txn_id).to.include(TxnID);",
+											"\tpm.expect(jsonData[0].failure_reason).to.eql(null);",
+											"\tpm.expect(jsonData[0].diff).to.eql(null);",
+											"\t",
+											"})",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"id": "d5464e20-98fd-4afc-b001-63db16828621",
+										"exec": [
+											"setTimeout(function(){}, [10000]);"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "http://localhost:3000/txn_delivery_log?txn_id=eq.{{TxnID}}&order=when_delivered",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3000",
+									"path": [
+										"txn_delivery_log"
+									],
+									"query": [
+										{
+											"key": "txn_id",
+											"value": "eq.{{TxnID}}"
+										},
+										{
+											"key": "order",
+											"value": "when_delivered"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Check test webhook",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "073a3abb-d8fb-49f5-bdde-60e7f8e45547",
+										"exec": [
+											"pm.test('Status and response time check', function () {",
+											"\tpm.response.to.have.status(200);",
+											"\tpm.expect(pm.response.responseTime).to.be.below(5000);})",
+											"var jsonData = JSON.parse(responseBody);\t",
+											"pm.test('Id check', function () {pm.expect(jsonData[jsonData.length-1].request[0].id).to.include(globals.TxnID);})",
+											"pm.test('Userid  check', function () {pm.expect(jsonData[jsonData.length-1].request[0].userId).to.include(globals.UserRandom);})",
+											"pm.test('customerName check', function () {pm.expect(jsonData[jsonData.length-1].request[0].customerName).to.include(environment.Customer);})",
+											"pm.test('merchantName check', function () {pm.expect(jsonData[jsonData.length-1].request[0].merchantName).to.include(environment.Amerchant);})",
+											"pm.test('merchantNetwork check', function () {pm.expect(jsonData[jsonData.length-1].request[0].merchantNetwork).to.include(globals.network);})",
+											"pm.test('whenCreated check', function () {",
+											"    var t1 =  jsonData[jsonData.length-1].request[0].whenCreated.slice(14, 16);",
+											"    var t2 = globals.sendtime.slice(14, 16);",
+											"    if (t1==t2) {pm.expect(jsonData[jsonData.length-1].request[0].whenCreated).to.include(globals.sendtime);}",
+											"    else {pm.expect(jsonData[jsonData.length-1].request[0].whenCreated).to.include(globals.sendtimesub1);}})",
+											"pm.test('whenUpdated check', function () {",
+											"    var t1 =  jsonData[jsonData.length-1].request[0].whenUpdated.slice(14, 16);",
+											"    var t2 = globals.whenUpdated.slice(14, 16);",
+											"    if (t1==t2) {pm.expect(jsonData[jsonData.length-1].request[0].whenUpdated).to.include(globals.whenUpdated)}",
+											"    else {pm.expect(jsonData[jsonData.length-1].request[0].whenUpdated).to.include(globals.whenUpdatedsub1);}})     ",
+											"pm.test('purchaseDate check', function () {pm.expect(jsonData[jsonData.length-1].request[0].purchaseDate).to.include((globals.purchaseDate.substring(0, 19)));})",
+											"pm.test('purchaseAmount check', function () {pm.expect(jsonData[jsonData.length-1].request[0].purchaseAmount).to.eql(+globals.amount);})",
+											"pm.test('purchaseCurrency check', function () {pm.expect(jsonData[jsonData.length-1].request[0].purchaseCurrency).to.include(\"USD\");})",
+											"// pm.test('cashbackBaseUSD check', function () {pm.expect(jsonData.cashbackBaseUSD).to.include(globals.UserRandom);})",
+											"pm.test('status check?', function () {pm.expect(jsonData[jsonData.length-1].request[0].status).to.include(globals.status);})",
+											"pm.test('diff check', function () {pm.expect(jsonData[jsonData.length-1].request[0].diff).to.eql(null);})",
+											"\t"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"id": "fbad4633-103a-476e-8718-dbb58f009438",
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://api-staging.spentlabs.com:8888/webhook",
+									"protocol": "http",
+									"host": [
+										"api-staging",
+										"spentlabs",
+										"com"
+									],
+									"port": "8888",
+									"path": [
+										"webhook"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Read txn from DB by ID",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "842dbffb-702b-4802-80dc-fae3e5c87afe",
+										"exec": [
+											"pm.test('Status and response time check', function () {",
+											"\tpm.response.to.have.status(200);",
+											"\tpm.expect(pm.response.responseTime).to.be.below(3000);})",
+											"var jsonData = JSON.parse(responseBody);",
+											"pm.test('Id check', function () {pm.expect(jsonData.id).to.include(globals.TxnID);})",
+											"pm.test('Userid  check', function () {pm.expect(jsonData.userId).to.include(globals.UserRandom);})",
+											"pm.test('customerName check', function () {pm.expect(jsonData.customerName).to.include(environment.Customer);})",
+											"pm.test('merchantName check', function () {pm.expect(jsonData.merchantName).to.include(environment.Amerchant);})",
+											"pm.test('merchantNetwork check', function () {pm.expect(jsonData.merchantNetwork).to.include(globals.network);})",
+											"pm.test('whenCreated check', function () {",
+											"    var t1 =  jsonData.whenCreated.slice(14, 16);",
+											"    var t2 = globals.sendtime.slice(14, 16);",
+											"    if (t1==t2) {pm.expect(jsonData.whenCreated).to.include(globals.sendtime);}",
+											"    else {pm.expect(jsonData.whenCreated).to.include(globals.sendtimesub1);}})",
+											"pm.test('whenUpdated check', function () {",
+											"    var t1 =  jsonData.whenUpdated.slice(14, 16);",
+											"    var t2 = globals.whenUpdated.slice(14, 16);",
+											"    if (t1==t2) {pm.expect(jsonData.whenUpdated).to.include(globals.whenUpdated)}",
+											"    else {pm.expect(jsonData.whenUpdated).to.include(globals.whenUpdatedsub1);}})    ",
+											"pm.test('purchaseDate check', function () {pm.expect(jsonData.purchaseDate).to.include((globals.purchaseDate.substring(0, 19)));})",
+											"pm.test('purchaseAmount check', function () {pm.expect(jsonData.purchaseAmount).to.eql(+globals.amount);})",
+											"pm.test('purchaseCurrency check', function () {pm.expect(jsonData.purchaseCurrency).to.include(\"USD\");})",
+											"// pm.test('cashbackBaseUSD check', function () {pm.expect(jsonData.cashbackBaseUSD).to.include(globals.UserRandom);})",
+											"pm.test('status check?', function () {pm.expect(jsonData.status).to.include(globals.status);})",
+											"pm.test('diff check', function () {pm.expect(jsonData.diff).to.eql(null);})",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"type": "text",
+										"value": " {{Token}}"
+									}
+								],
+								"url": {
+									"raw": "{{APIserver}}/api/v1/transactions/{{TxnID}}",
+									"host": [
+										"{{APIserver}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"transactions",
+										"{{TxnID}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Read txn from API via filters",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "842dbffb-702b-4802-80dc-fae3e5c87afe",
+										"exec": [
+											"pm.test('Status and response time check', function () {",
+											"\tpm.response.to.have.status(200);",
+											"\tpm.expect(pm.response.responseTime).to.be.below(3000);})",
+											"var jsonData = JSON.parse(responseBody);",
+											"pm.test('Id check', function () {pm.expect(jsonData[0].id).to.include(globals.TxnID);})",
+											"pm.test('Userid  check', function () {pm.expect(jsonData[0].userId).to.include(globals.UserRandom);})",
+											"pm.test('customerName check', function () {pm.expect(jsonData[0].customerName).to.include(environment.Customer);})",
+											"pm.test('merchantName check', function () {pm.expect(jsonData[0].merchantName).to.include(environment.Amerchant);})",
+											"pm.test('merchantNetwork check', function () {pm.expect(jsonData[0].merchantNetwork).to.include(globals.network);})",
+											"pm.test('whenCreated check', function () {",
+											"    var t1 =  jsonData[0].whenCreated.slice(14, 16);",
+											"    var t2 = globals.sendtime.slice(14, 16);",
+											"    if (t1==t2) {pm.expect(jsonData[0].whenCreated).to.include(globals.sendtime);}",
+											"    else {pm.expect(jsonData[0].whenCreated).to.include(globals.sendtimesub1);}})",
+											"pm.test('whenUpdated check', function () {",
+											"    var t1 =  jsonData[0].whenUpdated.slice(14, 16);",
+											"    var t2 = globals.whenUpdated.slice(14, 16);",
+											"    if (t1==t2) {pm.expect(jsonData[0].whenUpdated).to.include(globals.whenUpdated)}",
+											"    else {pm.expect(jsonData[0].whenUpdated).to.include(globals.whenUpdatedsub1);}})    ",
+											"pm.test('purchaseDate check', function () {pm.expect(jsonData[0].purchaseDate).to.include((globals.purchaseDate.substring(0, 19)));})",
+											"pm.test('purchaseAmount check', function () {pm.expect(jsonData[0].purchaseAmount).to.eql(+globals.amount);})",
+											"pm.test('purchaseCurrency check', function () {pm.expect(jsonData[0].purchaseCurrency).to.include(\"USD\");})",
+											"// pm.test('cashbackBaseUSD check', function () {pm.expect(jsonData.cashbackBaseUSD).to.include(globals.UserRandom);})",
+											"pm.test('status check?', function () {pm.expect(jsonData[0].status).to.include(globals.status);})",
+											"pm.test('diff check', function () {pm.expect(jsonData[0].diff).to.eql(null);})",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"id": "9bc7fb1c-43fc-4e50-836c-dc71a202a2b9",
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": " {{Token}}",
+										"type": "text"
+									},
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\"network\":\"{{network}}\",\n\"beginsAt\": \"{{beginsAt}}\",\n\"id\": \"{{TxnID}}\",\n\"offset\": 0,\n\"limit\": 1,\n\"merchant\": \"{{Amerchant}}\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{APIserver}}/api/v1/transactions",
+									"host": [
+										"{{APIserver}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"transactions"
+									]
+								}
+							},
+							"response": []
+						}
+					],
+					"protocolProfileBehavior": {},
+					"_postman_isSubFolder": true
+				},
+				{
+					"name": "Sent update for first txn",
+					"item": [
+						{
+							"name": "Azigo crap update",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"id": "0e94176e-1fa5-4850-ab2b-2256020ab3db",
+										"exec": [
+											"pm.globals.set(\"status\", \"locked\");",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"id": "c7fce5d9-f31f-4e0c-a5a2-5785441c6a15",
+										"exec": [
+											"pm.test('status and response time check', function () {",
+											"\tpm.response.to.have.status(200);",
+											"\tpm.expect(pm.response.responseTime).to.be.below(2000);})",
+											"const time = require(\"moment\");",
+											"var TS = time.utc().format(\"YYYY-MM-DDTHH:mm\");",
+											"pm.globals.set(\"whenUpdated\", TS);",
+											"var TS1 = time.utc().subtract(1, 'minutes').format(\"YYYY-MM-DDTHH:mm\");",
+											"pm.globals.set(\"whenUpdatedsub1\", TS1);",
+											"pm.globals.set(\"status\", \"available\");",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"programName\": \"SPENT\",\n\t\"userEmail\": \"\",\n\t\"status\": \"{{status}}\",\n\t\"uniqueRecordId\":\"{{UserRandom}}\",\n\t\"suppliedSubProgramId\": \"\",\n\t\"transactionId\": 47112006,\n\t\"storeOrderId\": \"9119973897547\",\n\t\"userId\": \"1234\",\n\t\"suppliedUserId\": \"{{Base64}}\",\n\t\"storeName\": \"{{Amerchant}}\",\n\t\"tentativeCannotChangeAfterDate\": 1536969600,\n\t\"tentativeCannotChangeAfterDatetime\": \"2019-09-15T00:00:00/.000Z\",\n\t\"timestamp\": 1530569679,\n\t\"datetime\": \"{{purchaseDate}}\",\n\t\"postDatetime\": \"{{purchaseDate}}\",\n\t\"sale\": {{amount}},\n\t\"commission\": 0.44,\n\t\"userCommission\": 0.33,\n\t\"sourceType\": \"site\",\n\t\"resellerPayoutDate\": null,\n\t\"logoUrl\": \"https://s3.amazonaws.com/storeslogo/459720\"\n}\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{AZIGOserver}}/crap/txn",
+									"host": [
+										"{{AZIGOserver}}"
+									],
+									"path": [
+										"crap",
+										"txn"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Status change test",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "f38607f0-6bd0-4bb2-862d-a62530b21465",
+										"exec": [
+											"pm.test('Status and response time check', function () {",
+											"\tpm.response.to.have.status(200);",
+											"\tpm.expect(pm.response.responseTime).to.be.below(5000);})",
+											"\t",
+											"pm.test('Txn updated?', function () {",
+											"    pm.expect(pm.response.text()).to.include(\"id\");",
+											"\tvar jsonData = JSON.parse(responseBody);",
+											"\tpm.expect(jsonData[0].id).to.eql(globals.TxnID);",
+											"\tpm.expect(jsonData[0].status).to.eql(\"available\");",
+											"})",
+											"",
+											"",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"id": "8f54e6d0-4154-4d66-9e6c-48eb63c45e6f",
+										"exec": [
+											"setTimeout(function(){}, [5000]);"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "http://localhost:3000/cashback_transaction?reference=eq.{{UserRandom}}",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3000",
+									"path": [
+										"cashback_transaction"
+									],
+									"query": [
+										{
+											"key": "reference",
+											"value": "eq.{{UserRandom}}"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Read delivery_log Update",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "f38607f0-6bd0-4bb2-862d-a62530b21465",
+										"exec": [
+											"pm.test('Status and response time check', function () {",
+											"\tpm.response.to.have.status(200);",
+											"\tpm.expect(pm.response.responseTime).to.be.below(5000);})",
+											"var jsonData = JSON.parse(responseBody);\t",
+											"pm.test('Update send?', function () {",
+											"\tlet TxnID = pm.globals.get(\"TxnID\");",
+											"\tpm.expect(jsonData.length).to.eql(2);",
+											"    pm.expect(jsonData[1].txn_id).to.include(TxnID);",
+											"\tpm.expect(jsonData[1].failure_reason).to.eql(null);})",
+											"pm.test('Diff right?', function () {",
+											"\tpm.expect(jsonData[1].diff.status).to.eql(\"pending\");",
+											"\t",
+											"})",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"id": "d5464e20-98fd-4afc-b001-63db16828621",
+										"exec": [
+											"setTimeout(function(){}, [10000]);"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "http://localhost:3000/txn_delivery_log?txn_id=eq.{{TxnID}}&order=when_delivered",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3000",
+									"path": [
+										"txn_delivery_log"
+									],
+									"query": [
+										{
+											"key": "txn_id",
+											"value": "eq.{{TxnID}}"
+										},
+										{
+											"key": "order",
+											"value": "when_delivered"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Check test webhook on update",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "073a3abb-d8fb-49f5-bdde-60e7f8e45547",
+										"exec": [
+											"pm.test('Status and response time check', function () {",
+											"\tpm.response.to.have.status(200);",
+											"\tpm.expect(pm.response.responseTime).to.be.below(5000);})",
+											"var jsonData = JSON.parse(responseBody);\t",
+											"pm.test('Id check', function () {pm.expect(jsonData[jsonData.length-1].request[0].id).to.include(globals.TxnID);})",
+											"pm.test('Userid  check', function () {pm.expect(jsonData[jsonData.length-1].request[0].userId).to.include(globals.UserRandom);})",
+											"pm.test('customerName check', function () {pm.expect(jsonData[jsonData.length-1].request[0].customerName).to.include(environment.Customer);})",
+											"pm.test('merchantName check', function () {pm.expect(jsonData[jsonData.length-1].request[0].merchantName).to.include(environment.Amerchant);})",
+											"pm.test('merchantNetwork check', function () {pm.expect(jsonData[jsonData.length-1].request[0].merchantNetwork).to.include(globals.network);})",
+											"pm.test('whenCreated check', function () {",
+											"    var t1 =  jsonData[jsonData.length-1].request[0].whenCreated.slice(14, 16);",
+											"    var t2 = globals.sendtime.slice(14, 16);",
+											"    if (t1==t2) {pm.expect(jsonData[jsonData.length-1].request[0].whenCreated).to.include(globals.sendtime);}",
+											"    else {pm.expect(jsonData[jsonData.length-1].request[0].whenCreated).to.include(globals.sendtimesub1);}})",
+											"pm.test('whenUpdated check', function () {",
+											"    var t1 =  jsonData[jsonData.length-1].request[0].whenUpdated.slice(14, 16);",
+											"    var t2 = globals.whenUpdated.slice(14, 16);",
+											"    if (t1==t2) {pm.expect(jsonData[jsonData.length-1].request[0].whenUpdated).to.include(globals.whenUpdated)}",
+											"    else {pm.expect(jsonData[jsonData.length-1].request[0].whenUpdated).to.include(globals.whenUpdatedsub1);}})    ",
+											"pm.test('purchaseDate check', function () {pm.expect(jsonData[jsonData.length-1].request[0].purchaseDate).to.include((globals.purchaseDate.substring(0, 19)));})",
+											"pm.test('purchaseAmount check', function () {pm.expect(jsonData[jsonData.length-1].request[0].purchaseAmount).to.eql(+globals.amount);})",
+											"pm.test('purchaseCurrency check', function () {pm.expect(jsonData[jsonData.length-1].request[0].purchaseCurrency).to.include(\"USD\");})",
+											"// pm.test('cashbackBaseUSD check', function () {pm.expect(jsonData.cashbackBaseUSD).to.include(globals.UserRandom);})",
+											"pm.test('status check?', function () {pm.expect(jsonData[jsonData.length-1].request[0].status).to.include(globals.status);})",
+											"pm.test('diff check', function () {pm.expect(jsonData[jsonData.length-1].request[0].diff.status).to.eql(\"pending\");})",
+											"\t"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"id": "fbad4633-103a-476e-8718-dbb58f009438",
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://api-staging.spentlabs.com:8888/webhook",
+									"protocol": "http",
+									"host": [
+										"api-staging",
+										"spentlabs",
+										"com"
+									],
+									"port": "8888",
+									"path": [
+										"webhook"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Read updated txn from DB by ID",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "842dbffb-702b-4802-80dc-fae3e5c87afe",
+										"exec": [
+											"pm.test('Status and response time check', function () {",
+											"\tpm.response.to.have.status(200);",
+											"\tpm.expect(pm.response.responseTime).to.be.below(3000);})",
+											"var jsonData = JSON.parse(responseBody);",
+											"pm.test('Id check', function () {pm.expect(jsonData.id).to.include(globals.TxnID);})",
+											"pm.test('Userid  check', function () {pm.expect(jsonData.userId).to.include(globals.UserRandom);})",
+											"pm.test('customerName check', function () {pm.expect(jsonData.customerName).to.include(environment.Customer);})",
+											"pm.test('merchantName check', function () {pm.expect(jsonData.merchantName).to.include(environment.Amerchant);})",
+											"pm.test('merchantNetwork check', function () {pm.expect(jsonData.merchantNetwork).to.include(globals.network);})",
+											"pm.test('whenCreated check', function () {",
+											"    var t1 =  jsonData.whenCreated.slice(14, 16);",
+											"    var t2 = globals.sendtime.slice(14, 16);",
+											"    if (t1==t2) {pm.expect(jsonData.whenCreated).to.include(globals.sendtime);}",
+											"    else {pm.expect(jsonData.whenCreated).to.include(globals.sendtimesub1);}})",
+											"pm.test('whenUpdated check', function () {",
+											"    var t1 =  jsonData.whenUpdated.slice(14, 16);",
+											"    var t2 = globals.whenUpdated.slice(14, 16);",
+											"    if (t1==t2) {pm.expect(jsonData.whenUpdated).to.include(globals.whenUpdated)}",
+											"    else {pm.expect(jsonData.whenUpdated).to.include(globals.whenUpdatedsub1);}})    ",
+											"pm.test('purchaseDate check', function () {pm.expect(jsonData.purchaseDate).to.include((globals.purchaseDate.substring(0, 19)));})",
+											"pm.test('purchaseAmount check', function () {pm.expect(jsonData.purchaseAmount).to.eql(+globals.amount);})",
+											"pm.test('purchaseCurrency check', function () {pm.expect(jsonData.purchaseCurrency).to.include(\"USD\");})",
+											"// pm.test('cashbackBaseUSD check', function () {pm.expect(jsonData.cashbackBaseUSD).to.include(globals.UserRandom);})",
+											"pm.test('status check?', function () {pm.expect(jsonData.status).to.include(globals.status);})",
+											"pm.test('diff check', function () {pm.expect(jsonData.diff).to.eql(null);})",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"type": "text",
+										"value": " {{Token}}"
+									}
+								],
+								"url": {
+									"raw": "{{APIserver}}/api/v1/transactions/{{TxnID}}",
+									"host": [
+										"{{APIserver}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"transactions",
+										"{{TxnID}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Read updated txn from API via filters",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "842dbffb-702b-4802-80dc-fae3e5c87afe",
+										"exec": [
+											"pm.test('Status and response time check', function () {",
+											"\tpm.response.to.have.status(200);",
+											"\tpm.expect(pm.response.responseTime).to.be.below(3000);})",
+											"var jsonData = JSON.parse(responseBody);",
+											"pm.test('Id check', function () {pm.expect(jsonData[0].id).to.include(globals.TxnID);})",
+											"pm.test('Userid  check', function () {pm.expect(jsonData[0].userId).to.include(globals.UserRandom);})",
+											"pm.test('customerName check', function () {pm.expect(jsonData[0].customerName).to.include(environment.Customer);})",
+											"pm.test('merchantName check', function () {pm.expect(jsonData[0].merchantName).to.include(environment.Amerchant);})",
+											"pm.test('merchantNetwork check', function () {pm.expect(jsonData[0].merchantNetwork).to.include(globals.network);})",
+											"pm.test('whenCreated check', function () {",
+											"    var t1 =  jsonData[0].whenCreated.slice(14, 16);",
+											"    var t2 = globals.sendtime.slice(14, 16);",
+											"    if (t1==t2) {pm.expect(jsonData[0].whenCreated).to.include(globals.sendtime);}",
+											"    else {pm.expect(jsonData[0].whenCreated).to.include(globals.sendtimesub1);}})",
+											"pm.test('whenUpdated check', function () {",
+											"    var t1 =  jsonData[0].whenUpdated.slice(14, 16);",
+											"    var t2 = globals.whenUpdated.slice(14, 16);",
+											"    if (t1==t2) {pm.expect(jsonData[0].whenUpdated).to.include(globals.whenUpdated)}",
+											"    else {pm.expect(jsonData[0].whenUpdated).to.include(globals.whenUpdatedsub1);}})    ",
+											"pm.test('purchaseDate check', function () {pm.expect(jsonData[0].purchaseDate).to.include((globals.purchaseDate.substring(0, 19)));})",
+											"pm.test('purchaseAmount check', function () {pm.expect(jsonData[0].purchaseAmount).to.eql(+globals.amount);})",
+											"pm.test('purchaseCurrency check', function () {pm.expect(jsonData[0].purchaseCurrency).to.include(\"USD\");})",
+											"// pm.test('cashbackBaseUSD check', function () {pm.expect(jsonData.cashbackBaseUSD).to.include(globals.UserRandom);})",
+											"pm.test('status check?', function () {pm.expect(jsonData[0].status).to.include(globals.status);})",
+											"pm.test('diff check', function () {pm.expect(jsonData[0].diff).to.eql(null);})",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"id": "9bc7fb1c-43fc-4e50-836c-dc71a202a2b9",
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": " {{Token}}",
+										"type": "text"
+									},
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\"network\":\"{{network}}\",\n\"beginsAt\": \"{{beginsAt}}\",\n\"id\": \"{{TxnID}}\",\n\"offset\": 0,\n\"limit\": 1,\n\"merchant\": \"{{Amerchant}}\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{APIserver}}/api/v1/transactions",
+									"host": [
+										"{{APIserver}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"transactions"
+									]
+								}
+							},
+							"response": []
+						}
+					],
+					"protocolProfileBehavior": {},
+					"_postman_isSubFolder": true
+				},
+				{
+					"name": "Send second txn",
+					"item": [
+						{
+							"name": "Azigo crap 2 txn Rej",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"id": "0e94176e-1fa5-4850-ab2b-2256020ab3db",
+										"exec": [
+											"pm.globals.set(\"status\", \"rejected\");",
+											"postman.setGlobalVariable(\"amount\", _.random(1,1000000));",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"id": "c7fce5d9-f31f-4e0c-a5a2-5785441c6a15",
+										"exec": [
+											"pm.test('status and response time check', function () {",
+											"\tpm.response.to.have.status(200);",
+											"\tpm.expect(pm.response.responseTime).to.be.below(2000);})",
+											"var moment = require(\"moment\");",
+											"var TS = moment.utc().format(\"YYYY-MM-DDTHH:mm\");",
+											"var TS1 = moment.utc().subtract(1, 'minutes').format(\"YYYY-MM-DDTHH:mm\");",
+											"pm.globals.set(\"sendtime\", TS);",
+											"pm.globals.set(\"sendtimesub1\", TS1);",
+											"pm.globals.set(\"whenUpdated\", TS);",
+											"pm.globals.set(\"whenUpdatedsub1\", TS1);",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"programName\": \"SPENT\",\n\t\"userEmail\": \"\",\n\t\"status\": \"{{status}}\",\n\t\"uniqueRecordId\":\"{{UserRandom}}1\",\n\t\"suppliedSubProgramId\": \"\",\n\t\"transactionId\": 47112006,\n\t\"storeOrderId\": \"9119973897547\",\n\t\"userId\": \"1234\",\n\t\"suppliedUserId\": \"{{Base64}}\",\n\t\"storeName\": \"{{Amerchant}}\",\n\t\"tentativeCannotChangeAfterDate\": 1536969600,\n\t\"tentativeCannotChangeAfterDatetime\": \"2019-09-15T00:00:00/.000Z\",\n\t\"timestamp\": 1530569679,\n\t\"datetime\": \"{{purchaseDate}}\",\n\t\"postDatetime\": \"{{purchaseDate}}\",\n\t\"sale\": {{amount}},\n\t\"commission\": 0.44,\n\t\"userCommission\": 0.33,\n\t\"sourceType\": \"site\",\n\t\"resellerPayoutDate\": null,\n\t\"logoUrl\": \"https://s3.amazonaws.com/storeslogo/459720\"\n}\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{AZIGOserver}}/crap/txn",
+									"host": [
+										"{{AZIGOserver}}"
+									],
+									"path": [
+										"crap",
+										"txn"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Read id for 2 UB txn",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "f38607f0-6bd0-4bb2-862d-a62530b21465",
+										"exec": [
+											"pm.test('Status and response time check', function () {",
+											"\tpm.response.to.have.status(200);",
+											"\tpm.expect(pm.response.responseTime).to.be.below(5000);})",
+											"\t",
+											"pm.test('Txn exist?', function () {",
+											"    pm.expect(pm.response.text()).to.include(\"id\");",
+											"\tvar jsonData = JSON.parse(responseBody);",
+											"\tpm.globals.set(\"TxnID\", jsonData[0].id);",
+											"})",
+											"",
+											"",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"id": "8f54e6d0-4154-4d66-9e6c-48eb63c45e6f",
+										"exec": [
+											"setTimeout(function(){}, [5000]);"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "http://localhost:3000/cashback_transaction?reference=eq.{{UserRandom}}1",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3000",
+									"path": [
+										"cashback_transaction"
+									],
+									"query": [
+										{
+											"key": "reference",
+											"value": "eq.{{UserRandom}}1"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Check delivery 2UB",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "f38607f0-6bd0-4bb2-862d-a62530b21465",
+										"exec": [
+											"pm.test('Status and response time check', function () {",
+											"\tpm.response.to.have.status(200);",
+											"\tpm.expect(pm.response.responseTime).to.be.below(5000);})",
+											"\t",
+											"pm.test('Update send?', function () {",
+											"\tlet TxnID = pm.globals.get(\"TxnID\");",
+											"\tvar jsonData = JSON.parse(responseBody);",
+											"    pm.expect(jsonData[0].txn_id).to.include(TxnID);",
+											"\tpm.expect(jsonData[0].failure_reason).to.eql(null);",
+											"\tpm.expect(jsonData[0].diff).to.eql(null);",
+											"\t",
+											"})",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"id": "d5464e20-98fd-4afc-b001-63db16828621",
+										"exec": [
+											"setTimeout(function(){}, [10000]);"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "http://localhost:3000/txn_delivery_log?txn_id=eq.{{TxnID}}&order=when_delivered",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3000",
+									"path": [
+										"txn_delivery_log"
+									],
+									"query": [
+										{
+											"key": "txn_id",
+											"value": "eq.{{TxnID}}"
+										},
+										{
+											"key": "order",
+											"value": "when_delivered"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Check test webhook on update",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "073a3abb-d8fb-49f5-bdde-60e7f8e45547",
+										"exec": [
+											"pm.test('Status and response time check', function () {",
+											"\tpm.response.to.have.status(200);",
+											"\tpm.expect(pm.response.responseTime).to.be.below(5000);})",
+											"var jsonData = JSON.parse(responseBody);\t",
+											"pm.test('Id check', function () {pm.expect(jsonData[jsonData.length-1].request[0].id).to.include(globals.TxnID);})",
+											"pm.test('Userid  check', function () {pm.expect(jsonData[jsonData.length-1].request[0].userId).to.include(globals.UserRandom);})",
+											"pm.test('customerName check', function () {pm.expect(jsonData[jsonData.length-1].request[0].customerName).to.include(environment.Customer);})",
+											"pm.test('merchantName check', function () {pm.expect(jsonData[jsonData.length-1].request[0].merchantName).to.include(environment.Amerchant);})",
+											"pm.test('merchantNetwork check', function () {pm.expect(jsonData[jsonData.length-1].request[0].merchantNetwork).to.include(globals.network);})",
+											"pm.test('whenCreated check', function () {",
+											"    var t1 =  jsonData[jsonData.length-1].request[0].whenCreated.slice(14, 16);",
+											"    var t2 = globals.sendtime.slice(14, 16);",
+											"    if (t1==t2) {pm.expect(jsonData[jsonData.length-1].request[0].whenCreated).to.include(globals.sendtime);}",
+											"    else {pm.expect(jsonData[jsonData.length-1].request[0].whenCreated).to.include(globals.sendtimesub1);}})",
+											"pm.test('whenUpdated check', function () {",
+											"    var t1 =  jsonData[jsonData.length-1].request[0].whenUpdated.slice(14, 16);",
+											"    var t2 = globals.whenUpdated.slice(14, 16);",
+											"    if (t1==t2) {pm.expect(jsonData[jsonData.length-1].request[0].whenUpdated).to.include(globals.whenUpdated)}",
+											"    else {pm.expect(jsonData[jsonData.length-1].request[0].whenUpdated).to.include(globals.whenUpdatedsub1);}})    ",
+											"pm.test('purchaseDate check', function () {pm.expect(jsonData[jsonData.length-1].request[0].purchaseDate).to.include((globals.purchaseDate.substring(0, 19)));})",
+											"pm.test('purchaseAmount check', function () {pm.expect(jsonData[jsonData.length-1].request[0].purchaseAmount).to.eql(+globals.amount);})",
+											"pm.test('purchaseCurrency check', function () {pm.expect(jsonData[jsonData.length-1].request[0].purchaseCurrency).to.include(\"USD\");})",
+											"// pm.test('cashbackBaseUSD check', function () {pm.expect(jsonData.cashbackBaseUSD).to.include(globals.UserRandom);})",
+											"pm.test('status check?', function () {pm.expect(jsonData[jsonData.length-1].request[0].status).to.include(globals.status);})",
+											"pm.test('diff check', function () {pm.expect(jsonData[jsonData.length-1].request[0].diff).to.eql(null);})",
+											"\t"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"id": "fbad4633-103a-476e-8718-dbb58f009438",
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://api-staging.spentlabs.com:8888/webhook",
+									"protocol": "http",
+									"host": [
+										"api-staging",
+										"spentlabs",
+										"com"
+									],
+									"port": "8888",
+									"path": [
+										"webhook"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Read txn from DB by ID",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "842dbffb-702b-4802-80dc-fae3e5c87afe",
+										"exec": [
+											"pm.test('Status and response time check', function () {",
+											"\tpm.response.to.have.status(200);",
+											"\tpm.expect(pm.response.responseTime).to.be.below(3000);})",
+											"var jsonData = JSON.parse(responseBody);",
+											"pm.test('Id check', function () {pm.expect(jsonData.id).to.include(globals.TxnID);})",
+											"pm.test('Userid  check', function () {pm.expect(jsonData.userId).to.include(globals.UserRandom);})",
+											"pm.test('customerName check', function () {pm.expect(jsonData.customerName).to.include(environment.Customer);})",
+											"pm.test('merchantName check', function () {pm.expect(jsonData.merchantName).to.include(environment.Amerchant);})",
+											"pm.test('merchantNetwork check', function () {pm.expect(jsonData.merchantNetwork).to.include(globals.network);})",
+											"pm.test('whenCreated check', function () {",
+											"    var t1 =  jsonData.whenCreated.slice(14, 16);",
+											"    var t2 = globals.sendtime.slice(14, 16);",
+											"    if (t1==t2) {pm.expect(jsonData.whenCreated).to.include(globals.sendtime);}",
+											"    else {pm.expect(jsonData.whenCreated).to.include(globals.sendtimesub1);}})",
+											"pm.test('whenUpdated check', function () {",
+											"    var t1 =  jsonData.whenUpdated.slice(14, 16);",
+											"    var t2 = globals.whenUpdated.slice(14, 16);",
+											"    if (t1==t2) {pm.expect(jsonData.whenUpdated).to.include(globals.whenUpdated)}",
+											"    else {pm.expect(jsonData.whenUpdated).to.include(globals.whenUpdatedsub1);}})    ",
+											"pm.test('purchaseDate check', function () {pm.expect(jsonData.purchaseDate).to.include((globals.purchaseDate.substring(0, 19)));})",
+											"pm.test('purchaseAmount check', function () {pm.expect(jsonData.purchaseAmount).to.eql(+globals.amount);})",
+											"pm.test('purchaseCurrency check', function () {pm.expect(jsonData.purchaseCurrency).to.include(\"USD\");})",
+											"// pm.test('cashbackBaseUSD check', function () {pm.expect(jsonData.cashbackBaseUSD).to.include(globals.UserRandom);})",
+											"pm.test('status check?', function () {pm.expect(jsonData.status).to.include(globals.status);})",
+											"pm.test('diff check', function () {pm.expect(jsonData.diff).to.eql(null);})",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"type": "text",
+										"value": " {{Token}}"
+									}
+								],
+								"url": {
+									"raw": "{{APIserver}}/api/v1/transactions/{{TxnID}}",
+									"host": [
+										"{{APIserver}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"transactions",
+										"{{TxnID}}"
+									]
+								}
+							},
+							"response": []
+						}
+					],
+					"protocolProfileBehavior": {},
+					"_postman_isSubFolder": true
+				}
+			],
+			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "Coupilia txn processing test CRAP",
+			"item": [
+				{
+					"name": "offer search",
+					"item": [
+						{
+							"name": "Offer search",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "35450045-0dfa-4002-97ff-84f6f19b29b9",
+										"exec": [
+											"var jsonData = JSON.parse(responseBody);",
+											"let UserRandom = pm.globals.get(\"UserRandom\");\t",
+											"postman.setGlobalVariable(\"OfferLink\", jsonData[0].offers[0].trackingUrl+\"&user=\"+UserRandom);",
+											"postman.setGlobalVariable(\"OfferId\", jsonData[0].offers[0].offerId);",
+											"pm.test('status and response time check', function () {",
+											"\tpm.response.to.have.status(200);",
+											"\tpm.expect(pm.response.responseTime).to.be.below(3000);",
+											"\t",
+											"})"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"id": "be769177-18f8-44cd-b1e3-67eb78114164",
+										"exec": [
+											"postman.setGlobalVariable(\"UserRandom\", _.random(10000,1000000));"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": " {{Token}}",
+										"type": "text"
+									},
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"search\": \"{{Cmerchant}}\"\n }",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{APIserver}}/api/v1/offers",
+									"host": [
+										"{{APIserver}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"offers"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "click",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "4f13f226-8ebf-4dcd-95c5-5646548d20bc",
+										"exec": [
+											"pm.test('status check', function () {",
+											"\tpm.response.to.have.status(200);})"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{OfferLink}}",
+									"host": [
+										"{{OfferLink}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Read hash",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "2ddbc981-5463-4159-8a1a-f1d544cafba7",
+										"exec": [
+											"pm.test('Hash exist?', function () {",
+											"\tpm.response.to.have.status(200);",
+											"\tpm.expect(pm.response.responseTime).to.be.below(5000);",
+											"    pm.expect(pm.response.text()).to.include(\"hash\");",
+											"\tvar jsonData = JSON.parse(responseBody);",
+											"\tlet UserRandom = pm.globals.get(\"UserRandom\");",
+											"\tpm.globals.set(\"Hash\", jsonData[0].hash);",
+											"})",
+											"pm.test('Generate BASE64...', function () {",
+											"var Hash = pm.globals.get('Hash');",
+											"var OfferId = pm.globals.get('OfferId');",
+											"var UserRandom = pm.globals.get('UserRandom');",
+											"const moment = require('moment');",
+											"pm.globals.set(\"EpochTS\", moment().valueOf());",
+											"var TimeStamp = pm.globals.get('EpochTS');",
+											"var HashOfferETS = Hash+\"|\"+OfferId+\"|\"+TimeStamp;",
+											"var CryptoJS = require(\"crypto-js\");",
+											"var rawStr = CryptoJS.enc.Utf8.parse(HashOfferETS);",
+											"var Base64 = CryptoJS.enc.Base64.stringify(rawStr);",
+											"pm.globals.set(\"Base64\", Base64);",
+											"const time = require(\"moment\");",
+											"pm.globals.set(\"purchaseDate\", time.utc().format(\"YYYY-MM-DDTHH:mm\"));",
+											"pm.globals.set(\"purchaseDateCoupilia\", time.utc().format(\"MM/DD/YYYY hh:mm a\").replace(\"am\",\"AM\").replace(\"pm\",\"PM\"));",
+											"pm.globals.set(\"beginsAt\", time.utc().subtract(1, 'minutes'));",
+											"})",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"id": "9d365420-3bea-44de-8456-b774b85a98cf",
+										"exec": [
+											"setTimeout(function(){}, [5000]);",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "http://localhost:3000/customer_users?user_id=eq.{{UserRandom}}",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3000",
+									"path": [
+										"customer_users"
+									],
+									"query": [
+										{
+											"key": "user_id",
+											"value": "eq.{{UserRandom}}"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					],
+					"protocolProfileBehavior": {},
+					"_postman_isSubFolder": true
+				},
+				{
+					"name": "Sent first txn",
+					"item": [
+						{
+							"name": "Coupilia crap",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"id": "0e94176e-1fa5-4850-ab2b-2256020ab3db",
+										"exec": [
+											"pm.globals.set(\"status\", \"pending\");",
+											"postman.setGlobalVariable(\"amount\", (_.random(1,1000000)/100));"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"id": "c7fce5d9-f31f-4e0c-a5a2-5785441c6a15",
+										"exec": [
+											"pm.test('status and response time check', function () {",
+											"\tpm.response.to.have.status(200);",
+											"\tpm.expect(pm.response.responseTime).to.be.below(2000);})",
+											"var moment = require(\"moment\");",
+											"var TS = moment.utc().format(\"YYYY-MM-DDTHH:mm\");",
+											"var TS1 = moment.utc().subtract(1, 'minutes').format(\"YYYY-MM-DDTHH:mm\");",
+											"pm.globals.set(\"sendtime\", TS);",
+											"pm.globals.set(\"sendtimesub1\", TS1);",
+											"pm.globals.set(\"whenUpdated\", TS);",
+											"pm.globals.set(\"whenUpdatedsub1\", TS1);",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"type": "text",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "\n{\n    \"COMMISSIONID\": \"12400884\",\n    \"COMMISSIONAMOUNT\": 3,\n    \"NETWORKSTATUS\": \"{{status}}\",\n    \"ORDERID\": \"12400881\",\n    \"SUBAFFILIATEID\": \"{{Base64}}\",\n    \"ADVERTISERNAME\": \"{{Cmerchant}}\",\n    \"ID\": {{UserRandom}},\n    \"NETWORK\": \"sas\",\n    \"EVENTDATE\": \"{{purchaseDateCoupilia}}\",\n    \"SALEAMOUNT\": {{amount}}\n  }\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{Coupiliaserver}}/crap/txn",
+									"host": [
+										"{{Coupiliaserver}}"
+									],
+									"path": [
+										"crap",
+										"txn"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Read txn id",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "f38607f0-6bd0-4bb2-862d-a62530b21465",
+										"exec": [
+											"pm.test('Status and response time check', function () {",
+											"\tpm.response.to.have.status(200);",
+											"\tpm.expect(pm.response.responseTime).to.be.below(5000);})",
+											"var jsonData = JSON.parse(responseBody);\t",
+											"pm.test('Txn exist?', function () {",
+											"    pm.expect(pm.response.text()).to.include(\"id\");",
+											"\tpm.globals.set(\"TxnID\", jsonData[0].id);",
+											"\tpm.globals.set(\"network\", jsonData[0].merchant_network);",
+											"\tpm.expect(jsonData[0].status).to.eql(\"pending\");})",
+											"pm.test('Is User_Id unique?', function () {pm.expect(jsonData.length).to.eql(1);})",
+											"",
+											"",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"id": "8f54e6d0-4154-4d66-9e6c-48eb63c45e6f",
+										"exec": [
+											"setTimeout(function(){}, [5000]);"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "http://localhost:3000/cashback_transaction?reference=eq.{{UserRandom}}",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3000",
+									"path": [
+										"cashback_transaction"
+									],
+									"query": [
+										{
+											"key": "reference",
+											"value": "eq.{{UserRandom}}"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Check delivery 1UB",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "f38607f0-6bd0-4bb2-862d-a62530b21465",
+										"exec": [
+											"pm.test('Status and response time check', function () {",
+											"\tpm.response.to.have.status(200);",
+											"\tpm.expect(pm.response.responseTime).to.be.below(5000);})",
+											"\t",
+											"pm.test('Update send?', function () {",
+											"\tlet TxnID = pm.globals.get(\"TxnID\");",
+											"\tvar jsonData = JSON.parse(responseBody);",
+											"    pm.expect(jsonData[0].txn_id).to.include(TxnID);",
+											"\tpm.expect(jsonData[0].failure_reason).to.eql(null);",
+											"\tpm.expect(jsonData[0].diff).to.eql(null);",
+											"\t",
+											"})",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"id": "d5464e20-98fd-4afc-b001-63db16828621",
+										"exec": [
+											"setTimeout(function(){}, [10000]);"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "http://localhost:3000/txn_delivery_log?txn_id=eq.{{TxnID}}&order=when_delivered",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3000",
+									"path": [
+										"txn_delivery_log"
+									],
+									"query": [
+										{
+											"key": "txn_id",
+											"value": "eq.{{TxnID}}"
+										},
+										{
+											"key": "order",
+											"value": "when_delivered"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Check test webhook",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "073a3abb-d8fb-49f5-bdde-60e7f8e45547",
+										"exec": [
+											"pm.test('Status and response time check', function () {",
+											"\tpm.response.to.have.status(200);",
+											"\tpm.expect(pm.response.responseTime).to.be.below(5000);})",
+											"var jsonData = JSON.parse(responseBody);\t",
+											"pm.test('Id check', function () {pm.expect(jsonData[jsonData.length-1].request[0].id).to.include(globals.TxnID);})",
+											"pm.test('Userid  check', function () {pm.expect(jsonData[jsonData.length-1].request[0].userId).to.include(globals.UserRandom);})",
+											"pm.test('customerName check', function () {pm.expect(jsonData[jsonData.length-1].request[0].customerName).to.include(environment.Customer);})",
+											"pm.test('merchantName check', function () {pm.expect(jsonData[jsonData.length-1].request[0].merchantName).to.include(environment.Cmerchant);})",
+											"pm.test('merchantNetwork check', function () {pm.expect(jsonData[jsonData.length-1].request[0].merchantNetwork).to.include(globals.network);})",
+											"pm.test('whenCreated check', function () {",
+											"    var t1 =  jsonData[jsonData.length-1].request[0].whenCreated.slice(14, 16);",
+											"    var t2 = globals.sendtime.slice(14, 16);",
+											"    if (t1==t2) {pm.expect(jsonData[jsonData.length-1].request[0].whenCreated).to.include(globals.sendtime);}",
+											"    else {pm.expect(jsonData[jsonData.length-1].request[0].whenCreated).to.include(globals.sendtimesub1);}})",
+											"pm.test('whenUpdated check', function () {",
+											"    var t1 =  jsonData[jsonData.length-1].request[0].whenUpdated.slice(14, 16);",
+											"    var t2 = globals.whenUpdated.slice(14, 16);",
+											"    if (t1==t2) {pm.expect(jsonData[jsonData.length-1].request[0].whenUpdated).to.include(globals.whenUpdated)}",
+											"    else {pm.expect(jsonData[jsonData.length-1].request[0].whenUpdated).to.include(globals.whenUpdatedsub1);}})     ",
+											"pm.test('purchaseDate check', function () {pm.expect(jsonData[jsonData.length-1].request[0].purchaseDate).to.include((globals.purchaseDate.substring(0, 19)));})",
+											"pm.test('purchaseAmount check', function () {pm.expect(jsonData[jsonData.length-1].request[0].purchaseAmount).to.eql(+globals.amount);})",
+											"pm.test('purchaseCurrency check', function () {pm.expect(jsonData[jsonData.length-1].request[0].purchaseCurrency).to.include(\"USD\");})",
+											"// pm.test('cashbackBaseUSD check', function () {pm.expect(jsonData.cashbackBaseUSD).to.include(globals.UserRandom);})",
+											"pm.test('status check?', function () {pm.expect(jsonData[jsonData.length-1].request[0].status).to.include(globals.status);})",
+											"pm.test('diff check', function () {pm.expect(jsonData[jsonData.length-1].request[0].diff).to.eql(null);})",
+											"\t"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"id": "fbad4633-103a-476e-8718-dbb58f009438",
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://api-staging.spentlabs.com:8888/webhook",
+									"protocol": "http",
+									"host": [
+										"api-staging",
+										"spentlabs",
+										"com"
+									],
+									"port": "8888",
+									"path": [
+										"webhook"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Read txn from DB by ID",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "842dbffb-702b-4802-80dc-fae3e5c87afe",
+										"exec": [
+											"pm.test('Status and response time check', function () {",
+											"\tpm.response.to.have.status(200);",
+											"\tpm.expect(pm.response.responseTime).to.be.below(3000);})",
+											"var jsonData = JSON.parse(responseBody);",
+											"pm.test('Id check', function () {pm.expect(jsonData.id).to.include(globals.TxnID);})",
+											"pm.test('Userid  check', function () {pm.expect(jsonData.userId).to.include(globals.UserRandom);})",
+											"pm.test('customerName check', function () {pm.expect(jsonData.customerName).to.include(environment.Customer);})",
+											"pm.test('merchantName check', function () {pm.expect(jsonData.merchantName).to.include(environment.Cmerchant);})",
+											"pm.test('merchantNetwork check', function () {pm.expect(jsonData.merchantNetwork).to.include(globals.network);})",
+											"pm.test('whenCreated check', function () {",
+											"    var t1 =  jsonData.whenCreated.slice(14, 16);",
+											"    var t2 = globals.sendtime.slice(14, 16);",
+											"    if (t1==t2) {pm.expect(jsonData.whenCreated).to.include(globals.sendtime);}",
+											"    else {pm.expect(jsonData.whenCreated).to.include(globals.sendtimesub1);}})",
+											"pm.test('whenUpdated check', function () {",
+											"    var t1 =  jsonData.whenUpdated.slice(14, 16);",
+											"    var t2 = globals.whenUpdated.slice(14, 16);",
+											"    if (t1==t2) {pm.expect(jsonData.whenUpdated).to.include(globals.whenUpdated)}",
+											"    else {pm.expect(jsonData.whenUpdated).to.include(globals.whenUpdatedsub1);}})    ",
+											"pm.test('purchaseDate check', function () {pm.expect(jsonData.purchaseDate).to.include((globals.purchaseDate.substring(0, 19)));})",
+											"pm.test('purchaseAmount check', function () {pm.expect(jsonData.purchaseAmount).to.eql(+globals.amount);})",
+											"pm.test('purchaseCurrency check', function () {pm.expect(jsonData.purchaseCurrency).to.include(\"USD\");})",
+											"// pm.test('cashbackBaseUSD check', function () {pm.expect(jsonData.cashbackBaseUSD).to.include(globals.UserRandom);})",
+											"pm.test('status check?', function () {pm.expect(jsonData.status).to.include(globals.status);})",
+											"pm.test('diff check', function () {pm.expect(jsonData.diff).to.eql(null);})",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"type": "text",
+										"value": " {{Token}}"
+									}
+								],
+								"url": {
+									"raw": "{{APIserver}}/api/v1/transactions/{{TxnID}}",
+									"host": [
+										"{{APIserver}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"transactions",
+										"{{TxnID}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Read txn from API via filters",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "842dbffb-702b-4802-80dc-fae3e5c87afe",
+										"exec": [
+											"pm.test('Status and response time check', function () {",
+											"\tpm.response.to.have.status(200);",
+											"\tpm.expect(pm.response.responseTime).to.be.below(3000);})",
+											"var jsonData = JSON.parse(responseBody);",
+											"pm.test('Id check', function () {pm.expect(jsonData[0].id).to.include(globals.TxnID);})",
+											"pm.test('Userid  check', function () {pm.expect(jsonData[0].userId).to.include(globals.UserRandom);})",
+											"pm.test('customerName check', function () {pm.expect(jsonData[0].customerName).to.include(environment.Customer);})",
+											"pm.test('merchantName check', function () {pm.expect(jsonData[0].merchantName).to.include(environment.Cmerchant);})",
+											"pm.test('merchantNetwork check', function () {pm.expect(jsonData[0].merchantNetwork).to.include(globals.network);})",
+											"pm.test('whenCreated check', function () {",
+											"    var t1 =  jsonData[0].whenCreated.slice(14, 16);",
+											"    var t2 = globals.sendtime.slice(14, 16);",
+											"    if (t1==t2) {pm.expect(jsonData[0].whenCreated).to.include(globals.sendtime);}",
+											"    else {pm.expect(jsonData[0].whenCreated).to.include(globals.sendtimesub1);}})",
+											"pm.test('whenUpdated check', function () {",
+											"    var t1 =  jsonData[0].whenUpdated.slice(14, 16);",
+											"    var t2 = globals.whenUpdated.slice(14, 16);",
+											"    if (t1==t2) {pm.expect(jsonData[0].whenUpdated).to.include(globals.whenUpdated)}",
+											"    else {pm.expect(jsonData[0].whenUpdated).to.include(globals.whenUpdatedsub1);}})    ",
+											"pm.test('purchaseDate check', function () {pm.expect(jsonData[0].purchaseDate).to.include((globals.purchaseDate.substring(0, 19)));})",
+											"pm.test('purchaseAmount check', function () {pm.expect(jsonData[0].purchaseAmount).to.eql(+globals.amount);})",
+											"pm.test('purchaseCurrency check', function () {pm.expect(jsonData[0].purchaseCurrency).to.include(\"USD\");})",
+											"// pm.test('cashbackBaseUSD check', function () {pm.expect(jsonData.cashbackBaseUSD).to.include(globals.UserRandom);})",
+											"pm.test('status check?', function () {pm.expect(jsonData[0].status).to.include(globals.status);})",
+											"pm.test('diff check', function () {pm.expect(jsonData[0].diff).to.eql(null);})",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"id": "9bc7fb1c-43fc-4e50-836c-dc71a202a2b9",
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": " {{Token}}",
+										"type": "text"
+									},
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\"network\":\"{{network}}\",\n\"beginsAt\": \"{{beginsAt}}\",\n\"id\": \"{{TxnID}}\",\n\"offset\": 0,\n\"limit\": 1,\n\"merchant\": \"{{Cmerchant}}\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{APIserver}}/api/v1/transactions",
+									"host": [
+										"{{APIserver}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"transactions"
+									]
+								}
+							},
+							"response": []
+						}
+					],
+					"protocolProfileBehavior": {},
+					"_postman_isSubFolder": true
+				},
+				{
+					"name": "Sent update for first txn",
+					"item": [
+						{
+							"name": "Coupilia crap update",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"id": "0e94176e-1fa5-4850-ab2b-2256020ab3db",
+										"exec": [
+											"pm.globals.set(\"status\", \"locked\");",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"id": "c7fce5d9-f31f-4e0c-a5a2-5785441c6a15",
+										"exec": [
+											"pm.test('status and response time check', function () {",
+											"\tpm.response.to.have.status(200);",
+											"\tpm.expect(pm.response.responseTime).to.be.below(2000);})",
+											"const time = require(\"moment\");",
+											"var TS = time.utc().format(\"YYYY-MM-DDTHH:mm\");",
+											"pm.globals.set(\"whenUpdated\", TS);",
+											"var TS1 = time.utc().subtract(1, 'minutes').format(\"YYYY-MM-DDTHH:mm\");",
+											"pm.globals.set(\"whenUpdatedsub1\", TS1);",
+											"pm.globals.set(\"status\", \"available\");",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"COMMISSIONID\": \"12400884\",\n    \"COMMISSIONAMOUNT\": 3,\n    \"NETWORKSTATUS\": \"{{status}}\",\n    \"ORDERID\": \"12400881\",\n    \"SUBAFFILIATEID\": \"{{Base64}}\",\n    \"ADVERTISERNAME\": \"{{Cmerchant}}\",\n    \"ID\": {{UserRandom}},\n    \"NETWORK\": \"sas\",\n    \"EVENTDATE\": \"{{purchaseDateCoupilia}}\",\n    \"SALEAMOUNT\": {{amount}}\n  }\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{Coupiliaserver}}/crap/txn",
+									"host": [
+										"{{Coupiliaserver}}"
+									],
+									"path": [
+										"crap",
+										"txn"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Status change test",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "f38607f0-6bd0-4bb2-862d-a62530b21465",
+										"exec": [
+											"pm.test('Status and response time check', function () {",
+											"\tpm.response.to.have.status(200);",
+											"\tpm.expect(pm.response.responseTime).to.be.below(5000);})",
+											"\t",
+											"pm.test('Txn updated?', function () {",
+											"    pm.expect(pm.response.text()).to.include(\"id\");",
+											"\tvar jsonData = JSON.parse(responseBody);",
+											"\tpm.expect(jsonData[0].id).to.eql(globals.TxnID);",
+											"\tpm.expect(jsonData[0].status).to.eql(\"available\");",
+											"})",
+											"",
+											"",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"id": "8f54e6d0-4154-4d66-9e6c-48eb63c45e6f",
+										"exec": [
+											"setTimeout(function(){}, [5000]);"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "http://localhost:3000/cashback_transaction?reference=eq.{{UserRandom}}",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3000",
+									"path": [
+										"cashback_transaction"
+									],
+									"query": [
+										{
+											"key": "reference",
+											"value": "eq.{{UserRandom}}"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Read delivery_log Update",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "f38607f0-6bd0-4bb2-862d-a62530b21465",
+										"exec": [
+											"pm.test('Status and response time check', function () {",
+											"\tpm.response.to.have.status(200);",
+											"\tpm.expect(pm.response.responseTime).to.be.below(5000);})",
+											"var jsonData = JSON.parse(responseBody);\t",
+											"pm.test('Update send?', function () {",
+											"\tlet TxnID = pm.globals.get(\"TxnID\");",
+											"\tpm.expect(jsonData.length).to.eql(2);",
+											"    pm.expect(jsonData[1].txn_id).to.include(TxnID);",
+											"\tpm.expect(jsonData[1].failure_reason).to.eql(null);})",
+											"pm.test('Diff right?', function () {",
+											"\tpm.expect(jsonData[1].diff.status).to.eql(\"pending\");",
+											"\t",
+											"})",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"id": "d5464e20-98fd-4afc-b001-63db16828621",
+										"exec": [
+											"setTimeout(function(){}, [10000]);"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "http://localhost:3000/txn_delivery_log?txn_id=eq.{{TxnID}}&order=when_delivered",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3000",
+									"path": [
+										"txn_delivery_log"
+									],
+									"query": [
+										{
+											"key": "txn_id",
+											"value": "eq.{{TxnID}}"
+										},
+										{
+											"key": "order",
+											"value": "when_delivered"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Check test webhook on update",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "073a3abb-d8fb-49f5-bdde-60e7f8e45547",
+										"exec": [
+											"pm.test('Status and response time check', function () {",
+											"\tpm.response.to.have.status(200);",
+											"\tpm.expect(pm.response.responseTime).to.be.below(5000);})",
+											"var jsonData = JSON.parse(responseBody);\t",
+											"pm.test('Id check', function () {pm.expect(jsonData[jsonData.length-1].request[0].id).to.include(globals.TxnID);})",
+											"pm.test('Userid  check', function () {pm.expect(jsonData[jsonData.length-1].request[0].userId).to.include(globals.UserRandom);})",
+											"pm.test('customerName check', function () {pm.expect(jsonData[jsonData.length-1].request[0].customerName).to.include(environment.Customer);})",
+											"pm.test('merchantName check', function () {pm.expect(jsonData[jsonData.length-1].request[0].merchantName).to.include(environment.Cmerchant);})",
+											"pm.test('merchantNetwork check', function () {pm.expect(jsonData[jsonData.length-1].request[0].merchantNetwork).to.include(globals.network);})",
+											"pm.test('whenCreated check', function () {",
+											"    var t1 =  jsonData[jsonData.length-1].request[0].whenCreated.slice(14, 16);",
+											"    var t2 = globals.sendtime.slice(14, 16);",
+											"    if (t1==t2) {pm.expect(jsonData[jsonData.length-1].request[0].whenCreated).to.include(globals.sendtime);}",
+											"    else {pm.expect(jsonData[jsonData.length-1].request[0].whenCreated).to.include(globals.sendtimesub1);}})",
+											"pm.test('whenUpdated check', function () {",
+											"    var t1 =  jsonData[jsonData.length-1].request[0].whenUpdated.slice(14, 16);",
+											"    var t2 = globals.whenUpdated.slice(14, 16);",
+											"    if (t1==t2) {pm.expect(jsonData[jsonData.length-1].request[0].whenUpdated).to.include(globals.whenUpdated)}",
+											"    else {pm.expect(jsonData[jsonData.length-1].request[0].whenUpdated).to.include(globals.whenUpdatedsub1);}})    ",
+											"pm.test('purchaseDate check', function () {pm.expect(jsonData[jsonData.length-1].request[0].purchaseDate).to.include((globals.purchaseDate.substring(0, 19)));})",
+											"pm.test('purchaseAmount check', function () {pm.expect(jsonData[jsonData.length-1].request[0].purchaseAmount).to.eql(+globals.amount);})",
+											"pm.test('purchaseCurrency check', function () {pm.expect(jsonData[jsonData.length-1].request[0].purchaseCurrency).to.include(\"USD\");})",
+											"// pm.test('cashbackBaseUSD check', function () {pm.expect(jsonData.cashbackBaseUSD).to.include(globals.UserRandom);})",
+											"pm.test('status check?', function () {pm.expect(jsonData[jsonData.length-1].request[0].status).to.include(globals.status);})",
+											"pm.test('diff check', function () {pm.expect(jsonData[jsonData.length-1].request[0].diff.status).to.eql(\"pending\");})",
+											"\t"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"id": "fbad4633-103a-476e-8718-dbb58f009438",
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://api-staging.spentlabs.com:8888/webhook",
+									"protocol": "http",
+									"host": [
+										"api-staging",
+										"spentlabs",
+										"com"
+									],
+									"port": "8888",
+									"path": [
+										"webhook"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Read updated txn from DB by ID",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "842dbffb-702b-4802-80dc-fae3e5c87afe",
+										"exec": [
+											"pm.test('Status and response time check', function () {",
+											"\tpm.response.to.have.status(200);",
+											"\tpm.expect(pm.response.responseTime).to.be.below(3000);})",
+											"var jsonData = JSON.parse(responseBody);",
+											"pm.test('Id check', function () {pm.expect(jsonData.id).to.include(globals.TxnID);})",
+											"pm.test('Userid  check', function () {pm.expect(jsonData.userId).to.include(globals.UserRandom);})",
+											"pm.test('customerName check', function () {pm.expect(jsonData.customerName).to.include(environment.Customer);})",
+											"pm.test('merchantName check', function () {pm.expect(jsonData.merchantName).to.include(environment.Cmerchant);})",
+											"pm.test('merchantNetwork check', function () {pm.expect(jsonData.merchantNetwork).to.include(globals.network);})",
+											"pm.test('whenCreated check', function () {",
+											"    var t1 =  jsonData.whenCreated.slice(14, 16);",
+											"    var t2 = globals.sendtime.slice(14, 16);",
+											"    if (t1==t2) {pm.expect(jsonData.whenCreated).to.include(globals.sendtime);}",
+											"    else {pm.expect(jsonData.whenCreated).to.include(globals.sendtimesub1);}})",
+											"pm.test('whenUpdated check', function () {",
+											"    var t1 =  jsonData.whenUpdated.slice(14, 16);",
+											"    var t2 = globals.whenUpdated.slice(14, 16);",
+											"    if (t1==t2) {pm.expect(jsonData.whenUpdated).to.include(globals.whenUpdated)}",
+											"    else {pm.expect(jsonData.whenUpdated).to.include(globals.whenUpdatedsub1);}})    ",
+											"pm.test('purchaseDate check', function () {pm.expect(jsonData.purchaseDate).to.include((globals.purchaseDate.substring(0, 19)));})",
+											"pm.test('purchaseAmount check', function () {pm.expect(jsonData.purchaseAmount).to.eql(+globals.amount);})",
+											"pm.test('purchaseCurrency check', function () {pm.expect(jsonData.purchaseCurrency).to.include(\"USD\");})",
+											"// pm.test('cashbackBaseUSD check', function () {pm.expect(jsonData.cashbackBaseUSD).to.include(globals.UserRandom);})",
+											"pm.test('status check?', function () {pm.expect(jsonData.status).to.include(globals.status);})",
+											"pm.test('diff check', function () {pm.expect(jsonData.diff).to.eql(null);})",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"type": "text",
+										"value": " {{Token}}"
+									}
+								],
+								"url": {
+									"raw": "{{APIserver}}/api/v1/transactions/{{TxnID}}",
+									"host": [
+										"{{APIserver}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"transactions",
+										"{{TxnID}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Read updated txn from API via filters",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "842dbffb-702b-4802-80dc-fae3e5c87afe",
+										"exec": [
+											"pm.test('Status and response time check', function () {",
+											"\tpm.response.to.have.status(200);",
+											"\tpm.expect(pm.response.responseTime).to.be.below(3000);})",
+											"var jsonData = JSON.parse(responseBody);",
+											"pm.test('Id check', function () {pm.expect(jsonData[0].id).to.include(globals.TxnID);})",
+											"pm.test('Userid  check', function () {pm.expect(jsonData[0].userId).to.include(globals.UserRandom);})",
+											"pm.test('customerName check', function () {pm.expect(jsonData[0].customerName).to.include(environment.Customer);})",
+											"pm.test('merchantName check', function () {pm.expect(jsonData[0].merchantName).to.include(environment.Cmerchant);})",
+											"pm.test('merchantNetwork check', function () {pm.expect(jsonData[0].merchantNetwork).to.include(globals.network);})",
+											"pm.test('whenCreated check', function () {",
+											"    var t1 =  jsonData[0].whenCreated.slice(14, 16);",
+											"    var t2 = globals.sendtime.slice(14, 16);",
+											"    if (t1==t2) {pm.expect(jsonData[0].whenCreated).to.include(globals.sendtime);}",
+											"    else {pm.expect(jsonData[0].whenCreated).to.include(globals.sendtimesub1);}})",
+											"pm.test('whenUpdated check', function () {",
+											"    var t1 =  jsonData[0].whenUpdated.slice(14, 16);",
+											"    var t2 = globals.whenUpdated.slice(14, 16);",
+											"    if (t1==t2) {pm.expect(jsonData[0].whenUpdated).to.include(globals.whenUpdated)}",
+											"    else {pm.expect(jsonData[0].whenUpdated).to.include(globals.whenUpdatedsub1);}})    ",
+											"pm.test('purchaseDate check', function () {pm.expect(jsonData[0].purchaseDate).to.include((globals.purchaseDate.substring(0, 19)));})",
+											"pm.test('purchaseAmount check', function () {pm.expect(jsonData[0].purchaseAmount).to.eql(+globals.amount);})",
+											"pm.test('purchaseCurrency check', function () {pm.expect(jsonData[0].purchaseCurrency).to.include(\"USD\");})",
+											"// pm.test('cashbackBaseUSD check', function () {pm.expect(jsonData.cashbackBaseUSD).to.include(globals.UserRandom);})",
+											"pm.test('status check?', function () {pm.expect(jsonData[0].status).to.include(globals.status);})",
+											"pm.test('diff check', function () {pm.expect(jsonData[0].diff).to.eql(null);})",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"id": "9bc7fb1c-43fc-4e50-836c-dc71a202a2b9",
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": " {{Token}}",
+										"type": "text"
+									},
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\"network\":\"{{network}}\",\n\"beginsAt\": \"{{beginsAt}}\",\n\"id\": \"{{TxnID}}\",\n\"offset\": 0,\n\"limit\": 1,\n\"merchant\": \"{{Cmerchant}}\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{APIserver}}/api/v1/transactions",
+									"host": [
+										"{{APIserver}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"transactions"
+									]
+								}
+							},
+							"response": []
+						}
+					],
+					"protocolProfileBehavior": {},
+					"_postman_isSubFolder": true
+				},
+				{
+					"name": "Send second txn",
+					"item": [
+						{
+							"name": "Coupilia crap 2 txn Rej",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"id": "0e94176e-1fa5-4850-ab2b-2256020ab3db",
+										"exec": [
+											"pm.globals.set(\"status\", \"rejected\");",
+											"postman.setGlobalVariable(\"amount\", _.random(1,1000000));",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"id": "c7fce5d9-f31f-4e0c-a5a2-5785441c6a15",
+										"exec": [
+											"pm.test('status and response time check', function () {",
+											"\tpm.response.to.have.status(200);",
+											"\tpm.expect(pm.response.responseTime).to.be.below(2000);})",
+											"var moment = require(\"moment\");",
+											"var TS = moment.utc().format(\"YYYY-MM-DDTHH:mm\");",
+											"var TS1 = moment.utc().subtract(1, 'minutes').format(\"YYYY-MM-DDTHH:mm\");",
+											"pm.globals.set(\"sendtime\", TS);",
+											"pm.globals.set(\"sendtimesub1\", TS1);",
+											"pm.globals.set(\"whenUpdated\", TS);",
+											"pm.globals.set(\"whenUpdatedsub1\", TS1);",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"COMMISSIONID\": \"12400884\",\n    \"COMMISSIONAMOUNT\": 3,\n    \"NETWORKSTATUS\": \"{{status}}\",\n    \"ORDERID\": \"12400881\",\n    \"SUBAFFILIATEID\": \"{{Base64}}\",\n    \"ADVERTISERNAME\": \"{{Cmerchant}}\",\n    \"ID\": {{UserRandom}}1,\n    \"NETWORK\": \"sas\",\n    \"EVENTDATE\": \"{{purchaseDateCoupilia}}\",\n    \"SALEAMOUNT\": {{amount}}\n  }\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{Coupiliaserver}}/crap/txn",
+									"host": [
+										"{{Coupiliaserver}}"
+									],
+									"path": [
+										"crap",
+										"txn"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Read id for 2 UB txn",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "f38607f0-6bd0-4bb2-862d-a62530b21465",
+										"exec": [
+											"pm.test('Status and response time check', function () {",
+											"\tpm.response.to.have.status(200);",
+											"\tpm.expect(pm.response.responseTime).to.be.below(5000);})",
+											"\t",
+											"pm.test('Txn exist?', function () {",
+											"    pm.expect(pm.response.text()).to.include(\"id\");",
+											"\tvar jsonData = JSON.parse(responseBody);",
+											"\tpm.globals.set(\"TxnID\", jsonData[0].id);",
+											"})",
+											"",
+											"",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"id": "8f54e6d0-4154-4d66-9e6c-48eb63c45e6f",
+										"exec": [
+											"setTimeout(function(){}, [5000]);"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "http://localhost:3000/cashback_transaction?reference=eq.{{UserRandom}}1",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3000",
+									"path": [
+										"cashback_transaction"
+									],
+									"query": [
+										{
+											"key": "reference",
+											"value": "eq.{{UserRandom}}1"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Check delivery 2UB",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "f38607f0-6bd0-4bb2-862d-a62530b21465",
+										"exec": [
+											"pm.test('Status and response time check', function () {",
+											"\tpm.response.to.have.status(200);",
+											"\tpm.expect(pm.response.responseTime).to.be.below(5000);})",
+											"\t",
+											"pm.test('Update send?', function () {",
+											"\tlet TxnID = pm.globals.get(\"TxnID\");",
+											"\tvar jsonData = JSON.parse(responseBody);",
+											"    pm.expect(jsonData[0].txn_id).to.include(TxnID);",
+											"\tpm.expect(jsonData[0].failure_reason).to.eql(null);",
+											"\tpm.expect(jsonData[0].diff).to.eql(null);",
+											"\t",
+											"})",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"id": "d5464e20-98fd-4afc-b001-63db16828621",
+										"exec": [
+											"setTimeout(function(){}, [10000]);"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "http://localhost:3000/txn_delivery_log?txn_id=eq.{{TxnID}}&order=when_delivered",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3000",
+									"path": [
+										"txn_delivery_log"
+									],
+									"query": [
+										{
+											"key": "txn_id",
+											"value": "eq.{{TxnID}}"
+										},
+										{
+											"key": "order",
+											"value": "when_delivered"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Check test webhook on update",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "073a3abb-d8fb-49f5-bdde-60e7f8e45547",
+										"exec": [
+											"pm.test('Status and response time check', function () {",
+											"\tpm.response.to.have.status(200);",
+											"\tpm.expect(pm.response.responseTime).to.be.below(5000);})",
+											"var jsonData = JSON.parse(responseBody);\t",
+											"pm.test('Id check', function () {pm.expect(jsonData[jsonData.length-1].request[0].id).to.include(globals.TxnID);})",
+											"pm.test('Userid  check', function () {pm.expect(jsonData[jsonData.length-1].request[0].userId).to.include(globals.UserRandom);})",
+											"pm.test('customerName check', function () {pm.expect(jsonData[jsonData.length-1].request[0].customerName).to.include(environment.Customer);})",
+											"pm.test('merchantName check', function () {pm.expect(jsonData[jsonData.length-1].request[0].merchantName).to.include(environment.Cmerchant);})",
+											"pm.test('merchantNetwork check', function () {pm.expect(jsonData[jsonData.length-1].request[0].merchantNetwork).to.include(globals.network);})",
+											"pm.test('whenCreated check', function () {",
+											"    var t1 =  jsonData[jsonData.length-1].request[0].whenCreated.slice(14, 16);",
+											"    var t2 = globals.sendtime.slice(14, 16);",
+											"    if (t1==t2) {pm.expect(jsonData[jsonData.length-1].request[0].whenCreated).to.include(globals.sendtime);}",
+											"    else {pm.expect(jsonData[jsonData.length-1].request[0].whenCreated).to.include(globals.sendtimesub1);}})",
+											"pm.test('whenUpdated check', function () {",
+											"    var t1 =  jsonData[jsonData.length-1].request[0].whenUpdated.slice(14, 16);",
+											"    var t2 = globals.whenUpdated.slice(14, 16);",
+											"    if (t1==t2) {pm.expect(jsonData[jsonData.length-1].request[0].whenUpdated).to.include(globals.whenUpdated)}",
+											"    else {pm.expect(jsonData[jsonData.length-1].request[0].whenUpdated).to.include(globals.whenUpdatedsub1);}})    ",
+											"pm.test('purchaseDate check', function () {pm.expect(jsonData[jsonData.length-1].request[0].purchaseDate).to.include((globals.purchaseDate.substring(0, 19)));})",
+											"pm.test('purchaseAmount check', function () {pm.expect(jsonData[jsonData.length-1].request[0].purchaseAmount).to.eql(+globals.amount);})",
+											"pm.test('purchaseCurrency check', function () {pm.expect(jsonData[jsonData.length-1].request[0].purchaseCurrency).to.include(\"USD\");})",
+											"// pm.test('cashbackBaseUSD check', function () {pm.expect(jsonData.cashbackBaseUSD).to.include(globals.UserRandom);})",
+											"pm.test('status check?', function () {pm.expect(jsonData[jsonData.length-1].request[0].status).to.include(globals.status);})",
+											"pm.test('diff check', function () {pm.expect(jsonData[jsonData.length-1].request[0].diff).to.eql(null);})",
+											"\t"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"id": "fbad4633-103a-476e-8718-dbb58f009438",
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://api-staging.spentlabs.com:8888/webhook",
+									"protocol": "http",
+									"host": [
+										"api-staging",
+										"spentlabs",
+										"com"
+									],
+									"port": "8888",
+									"path": [
+										"webhook"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Read txn from DB by ID",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "842dbffb-702b-4802-80dc-fae3e5c87afe",
+										"exec": [
+											"pm.test('Status and response time check', function () {",
+											"\tpm.response.to.have.status(200);",
+											"\tpm.expect(pm.response.responseTime).to.be.below(3000);})",
+											"var jsonData = JSON.parse(responseBody);",
+											"pm.test('Id check', function () {pm.expect(jsonData.id).to.include(globals.TxnID);})",
+											"pm.test('Userid  check', function () {pm.expect(jsonData.userId).to.include(globals.UserRandom);})",
+											"pm.test('customerName check', function () {pm.expect(jsonData.customerName).to.include(environment.Customer);})",
+											"pm.test('merchantName check', function () {pm.expect(jsonData.merchantName).to.include(environment.Cmerchant);})",
+											"pm.test('merchantNetwork check', function () {pm.expect(jsonData.merchantNetwork).to.include(globals.network);})",
+											"pm.test('whenCreated check', function () {",
+											"    var t1 =  jsonData.whenCreated.slice(14, 16);",
+											"    var t2 = globals.sendtime.slice(14, 16);",
+											"    if (t1==t2) {pm.expect(jsonData.whenCreated).to.include(globals.sendtime);}",
+											"    else {pm.expect(jsonData.whenCreated).to.include(globals.sendtimesub1);}})",
+											"pm.test('whenUpdated check', function () {",
+											"    var t1 =  jsonData.whenUpdated.slice(14, 16);",
+											"    var t2 = globals.whenUpdated.slice(14, 16);",
+											"    if (t1==t2) {pm.expect(jsonData.whenUpdated).to.include(globals.whenUpdated)}",
+											"    else {pm.expect(jsonData.whenUpdated).to.include(globals.whenUpdatedsub1);}})    ",
+											"pm.test('purchaseDate check', function () {pm.expect(jsonData.purchaseDate).to.include((globals.purchaseDate.substring(0, 19)));})",
+											"pm.test('purchaseAmount check', function () {pm.expect(jsonData.purchaseAmount).to.eql(+globals.amount);})",
+											"pm.test('purchaseCurrency check', function () {pm.expect(jsonData.purchaseCurrency).to.include(\"USD\");})",
+											"// pm.test('cashbackBaseUSD check', function () {pm.expect(jsonData.cashbackBaseUSD).to.include(globals.UserRandom);})",
+											"pm.test('status check?', function () {pm.expect(jsonData.status).to.include(globals.status);})",
+											"pm.test('diff check', function () {pm.expect(jsonData.diff).to.eql(null);})",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"type": "text",
+										"value": " {{Token}}"
+									}
+								],
+								"url": {
+									"raw": "{{APIserver}}/api/v1/transactions/{{TxnID}}",
+									"host": [
+										"{{APIserver}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"transactions",
+										"{{TxnID}}"
+									]
+								}
+							},
+							"response": []
+						}
+					],
+					"protocolProfileBehavior": {},
+					"_postman_isSubFolder": true
+				}
+			],
+			"protocolProfileBehavior": {}
+		}
+	],
+	"protocolProfileBehavior": {}
+}
