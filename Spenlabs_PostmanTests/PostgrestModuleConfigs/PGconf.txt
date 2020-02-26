@@ -1,0 +1,9 @@
+db-uri = "postgres://postgres:9Ez1Bu8ILD%25nC%2A8khEHH4jTg@spent-b2b-staging.cwmk7rmhhzlq.eu-west-1.rds.amazonaws.com:5432/postgres"
+db-schema = "public"
+db-anon-role = "postgres"
+db-pool = 10
+db-pool-timeout = 10
+  
+server-host = "!4"
+server-port = 3000
+

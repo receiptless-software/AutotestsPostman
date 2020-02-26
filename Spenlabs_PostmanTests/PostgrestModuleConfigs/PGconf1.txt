@@ -1,0 +1,9 @@
+db-uri = "postgres://Spent_Staging_rw:gFhtU5jQ%5EQ%26b%258-w@10.34.16.90/Spent_Staging"
+db-schema = "public"
+db-anon-role = "Spent_Staging_rw"
+db-pool = 10
+db-pool-timeout = 10
+  
+server-host = "!4"
+server-port = 3000
+

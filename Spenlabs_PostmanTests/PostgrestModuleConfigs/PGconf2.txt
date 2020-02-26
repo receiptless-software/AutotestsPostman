@@ -1,0 +1,9 @@
+db-uri = "postgres://postgres:hasp513#burt@postgres.dev.spentlabs.com/postgres"
+db-schema = "public"
+db-anon-role = "postgres"
+db-pool = 10
+db-pool-timeout = 10
+  
+server-host = "!4"
+server-port = 3000
+
